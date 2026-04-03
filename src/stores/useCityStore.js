@@ -348,15 +348,11 @@ export const useCityStore = create(
         const newLockedState = !state.selectedBuilding.locked
         logger.info(`${state.selectedBuilding.type} is now ${newLockedState ? 'LOCKED' : 'UNLOCKED'}`)
 
-        // ✅ selectedBuilding stores tileX/Y as floats, round for layout matching
-        const roundedX = Math.round(state.selectedBuilding.tileX)
-        const roundedY = Math.round(state.selectedBuilding.tileY)
-
-        // Update cityLayout with new lock state
+        // ✅ Match with epsilon tolerance for float coords (layout now stores exact floats)
         const updatedLayout = state.cityLayout.map(b => {
           if (b.type === state.selectedBuilding.type && 
-              b.x === roundedX && 
-              b.y === roundedY) {
+              Math.abs(b.x - state.selectedBuilding.tileX) < 0.01 &&
+              Math.abs(b.y - state.selectedBuilding.tileY) < 0.01) {
             return { ...b, locked: newLockedState }
           }
           return b
@@ -369,8 +365,8 @@ export const useCityStore = create(
           if (scene?.placedBuildings) {
             scene.placedBuildings.forEach(building => {
               if (building.type === state.selectedBuilding.type &&
-                  Math.round(building.tileX) === roundedX &&
-                  Math.round(building.tileY) === roundedY) {
+                  Math.abs(building.tileX - state.selectedBuilding.tileX) < 0.01 &&
+                  Math.abs(building.tileY - state.selectedBuilding.tileY) < 0.01) {
                 building.locked = newLockedState
               }
             })

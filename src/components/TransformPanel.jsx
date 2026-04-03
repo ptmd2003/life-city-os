@@ -41,10 +41,11 @@ export function TransformPanel() {
   }
 
   // ✅ Compare objects by their position (unique identifier for placed buildings)
-  // selectedBuilding stores tileX/Y as floats, layout has x/y as integers
+  // selectedBuilding stores tileX/Y as floats, layout can also have floats now
   const isObjectSelected = (obj) => {
     if (!selectedBuilding) return false
-    return Math.round(selectedBuilding.tileX) === obj.x && Math.round(selectedBuilding.tileY) === obj.y
+    return Math.abs(selectedBuilding.tileX - obj.x) < 0.01 && 
+           Math.abs(selectedBuilding.tileY - obj.y) < 0.01
   }
 
   // Handle close button

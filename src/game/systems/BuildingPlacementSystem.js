@@ -102,30 +102,26 @@ function handleRightClick(scene, pointer) {
 
   if (!clickedBuilding) return
 
-  // ✅ Round tile coords for layout matching (only buildingData.tileX/Y are definitive)
-  const roundedX = Math.round(clickedBuilding.tileX)
-  const roundedY = Math.round(clickedBuilding.tileY)
-
-  // ✅ Check if building is locked
-  const buildingFromLayout = store.cityLayout.find(b => 
-    b.type === clickedBuilding.type && 
-    b.x === roundedX && 
-    b.y === roundedY
-  )
+  // ✅ Layout now stores exact floats, match with epsilon tolerance
+  const buildingFromLayout = store.cityLayout.find(b => {
+    if (b.type !== clickedBuilding.type) return false
+    return Math.abs(b.x - clickedBuilding.tileX) < 0.01 && 
+           Math.abs(b.y - clickedBuilding.tileY) < 0.01
+  })
 
   if (buildingFromLayout?.locked) {
     logger.debug(`Cannot duplicate locked ${clickedBuilding.type}`)
     return
   }
 
-  // ✅ Duplicate: offset by 1 tile down-right (round for layout coords)
+  // ✅ Duplicate: offset by 1 tile down-right (store exact floats)
   const duplicateData = {
     type: clickedBuilding.type,
-    x: roundedX + 1,
-    y: roundedY + 1,
+    x: clickedBuilding.tileX + 1,  // Store exact float
+    y: clickedBuilding.tileY + 1,
     scale: buildingFromLayout?.scale || 1.0,
     angle: buildingFromLayout?.angle || 0,
-    id: clickedBuilding.type + '-' + (roundedX + 1) + '-' + (roundedY + 1) + '-' + Date.now()
+    id: clickedBuilding.type + '-' + (Math.round(clickedBuilding.tileX) + 1) + '-' + (Math.round(clickedBuilding.tileY) + 1) + '-' + Date.now()
   }
 
   // Add to layout in memory
@@ -217,16 +213,14 @@ function handleGlobalPointerUp(scene) {
     if (buildingData) {
       logger.debug(`Selected ${buildingData.type} for transform`)
       
-      // ✅ buildingData only stores tileX/Y as floats — no separate x/y
-      // Round only for layout matching
-      const roundedX = Math.round(buildingData.tileX)
-      const roundedY = Math.round(buildingData.tileY)
-
-      const layoutEntry = store.cityLayout.find(b => 
-        b.type === buildingData.type && 
-        b.x === roundedX && 
-        b.y === roundedY
-      )
+      // ✅ buildingData only stores tileX/Y as floats
+      // Layout can now also have float coords, so match directly or with tolerance
+      const layoutEntry = store.cityLayout.find(b => {
+        if (b.type !== buildingData.type) return false
+        // Match with small epsilon tolerance for float comparison
+        return Math.abs(b.x - buildingData.tileX) < 0.01 && 
+               Math.abs(b.y - buildingData.tileY) < 0.01
+      })
       const selectedBuildingWithLocked = {
         ...buildingData,
         locked: layoutEntry?.locked ?? buildingData.locked ?? false  // Prefer layout, fallback to buildingData
@@ -305,9 +299,9 @@ function updateCityLayoutMemory(scene) {
   const store = useCityStore.getState()
   
   const newLayout = scene.placedBuildings.map(building => {
-    // ✅ Preserve locked state from original cityLayout
-    // Round tile coords for layout matching (buildings store floats for precision)
-    const roundedX = Math.round(building.tileX)
+    // ✅ Store exact float tile coordinates (preserve decimal precision)
+    // This ensures buildings reload at exact same position
+    const roundedX = Math.round(building.tileX)  // For matching only
     const roundedY = Math.round(building.tileY)
     
     const originalEntry = store.cityLayout.find(b => 
@@ -318,12 +312,12 @@ function updateCityLayoutMemory(scene) {
     
     return {
       type: building.type,
-      x: roundedX,  // ✅ Round only for storage
-      y: roundedY,
+      x: building.tileX,  // ✅ Store exact float, not rounded!
+      y: building.tileY,
       scale: building.sprite.scaleX,
       angle: building.sprite.angle,
       locked: building.locked ?? originalEntry?.locked ?? false,  // ✅ Keep lock state!
-      id: building.type + '-' + roundedX + '-' + roundedY // Generate stable ID
+      id: building.type + '-' + roundedX + '-' + roundedY // ID uses rounded for stability
     }
   })
 
