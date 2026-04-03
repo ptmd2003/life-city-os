@@ -88,6 +88,13 @@ export default class CityScene extends Phaser.Scene {
     this.videoOverlaySystem.init()
     logger.info('VideoOverlaySystem initialized')
 
+    // ✅ Handle window/canvas resize for video overlay
+    this.scale.on('resize', () => {
+      if (this.videoOverlaySystem) {
+        this.videoOverlaySystem.updateSize()
+      }
+    })
+
     // Initialize season tracking
     this.lastSeason = null
     this.lastLoadedVideoKey = null

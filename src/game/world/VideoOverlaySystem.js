@@ -49,35 +49,21 @@ export class VideoOverlaySystem {
       if (!this.videoSprite) return
 
       this.videoSprite.setOrigin(0.5, 0.5)
-      // Position at world center (ground level) — fixed to world, not camera
-      this.videoSprite.setPosition(this.scene.worldCenter.x, this.scene.worldCenter.y)
+      // ✅ Position at camera center (fixed to camera, not world)
+      const camera = this.scene.cameras.main
+      this.videoSprite.setPosition(camera.centerX, camera.centerY)
       this.videoSprite.setDepth(9999)
       this.videoSprite.setBlendMode(blend)
       this.videoSprite.setAlpha(alpha)
-      this.videoSprite.setScrollFactor(1, 1)  // Scroll with world (not fixed to camera)
+      this.videoSprite.setScrollFactor(0, 0)  // ✅ Fixed to camera (doesn't pan)
       
       // Mark as video overlay to exclude from hover effects
       this.videoSprite._isVideoOverlay = true
       
       logger.info(`Loaded video: ${videoKey}`)  
 
-      // Set native dimensions when loaded
-      const setNativeDimensions = () => {
-        if (!this.videoSprite?.video) return
-        const videoWidth = this.videoSprite.video.videoWidth
-        const videoHeight = this.videoSprite.video.videoHeight
-        if (videoWidth > 0 && videoHeight > 0) {
-          this.videoSprite.setDisplaySize(videoWidth, videoHeight)
-        }
-      }
-      
-      if (this.videoSprite.video) {
-        if (this.videoSprite.video.readyState >= 1) {
-          setNativeDimensions()
-        } else {
-          this.videoSprite.video.addEventListener('loadedmetadata', setNativeDimensions, { once: true })
-        }
-      }
+      // ✅ Size to match camera/canvas (not native dimensions)
+      this.videoSprite.setDisplaySize(camera.width, camera.height)
 
       // Set playback speed
       if (this.videoSprite.video) {
@@ -181,6 +167,17 @@ export class VideoOverlaySystem {
       } catch (err) {
         // Silently fail
       }
+    }
+  }
+
+  /**
+   * Update video size to match camera (called on window resize)
+   */
+  updateSize() {
+    if (this.videoSprite) {
+      const camera = this.scene.cameras.main
+      this.videoSprite.setDisplaySize(camera.width, camera.height)
+      this.videoSprite.setPosition(camera.centerX, camera.centerY)
     }
   }
 
