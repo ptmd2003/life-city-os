@@ -91,11 +91,6 @@ export class VideoOverlaySystem {
             logger.debug(`Video looping at ${vid.currentTime.toFixed(2)}s`)
             vid.currentTime = loopStart
             vid.play()
-            // ✅ Ensure alpha stays at 1.0 during loop
-            if (this.videoSprite.alpha !== 1.0) {
-              logger.warn(`Video alpha drift detected during loop, resetting`)
-              this.videoSprite.setAlpha(1.0)
-            }
           }
         }
 
@@ -108,11 +103,6 @@ export class VideoOverlaySystem {
               playPromise.catch((err) => {
                 logger.warn(`Play error on loop: ${err.message}`)
               })
-            }
-            // ✅ Ensure alpha stays at 1.0 during loop
-            if (this.videoSprite.alpha !== 1.0) {
-              logger.warn(`Video alpha drift detected on ended, resetting`)
-              this.videoSprite.setAlpha(1.0)
             }
           }
         }
@@ -137,16 +127,6 @@ export class VideoOverlaySystem {
       } catch {
         // Silently fail
       }
-    }
-  }
-
-  setAlpha(alpha) {
-    // ✅ LOCK ALPHA TO 1.0 ALWAYS - Video overlay should always be fully opaque
-    if (this.videoSprite) {
-      if (alpha !== 1.0) {
-        logger.debug(`Alpha change blocked (locked to 1.0)`)
-      }
-      this.videoSprite.setAlpha(1.0)  // Always 1.0, never change
     }
   }
 

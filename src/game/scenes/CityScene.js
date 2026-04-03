@@ -421,7 +421,6 @@ export default class CityScene extends Phaser.Scene {
     if (currentSeason === 'spring') {
       // ✅ Spring: Destroy any existing video and play sakura
       if (this.videoOverlaySystem?.videoSprite) {
-        console.log('🌸 [CityScene] Destroying old video for SPRING...')
         this.videoOverlaySystem.destroy()
       }
       
@@ -436,13 +435,11 @@ export default class CityScene extends Phaser.Scene {
             loopStart: 10,    // Start looping at 10s
             loopEnd: 30       // End loop at 30s
           })
-          console.log('🌸 [CityScene] Sakura video started (SPRING)')
         }
       }, 100)
     } else if (currentSeason === 'winter') {
       // ✅ Winter: Destroy any existing video and play winter
       if (this.videoOverlaySystem?.videoSprite) {
-        console.log('❄️ [CityScene] Destroying old video for WINTER...')
         this.videoOverlaySystem.destroy()
       }
       
@@ -457,13 +454,11 @@ export default class CityScene extends Phaser.Scene {
             loopStart: 0,     // Loop from beginning
             loopEnd: null     // Loop to end of video
           })
-          console.log('❄️ [CityScene] Winter video started (WINTER)')
         }
       }, 100)
     } else if (currentSeason === 'summer') {
       // ✅ Summer: Destroy any existing video and play summer
       if (this.videoOverlaySystem?.videoSprite) {
-        console.log('☀️ [CityScene] Destroying old video for SUMMER...')
         this.videoOverlaySystem.destroy()
       }
       
@@ -478,13 +473,11 @@ export default class CityScene extends Phaser.Scene {
             loopStart: 0,     // Loop from beginning
             loopEnd: null     // Loop to end of video
           })
-          console.log('☀️ [CityScene] Summer video started (SUMMER)')
         }
       }, 100)
     } else if (currentSeason === 'autumn') {
       // ✅ Autumn: Destroy any existing video and play autumn
       if (this.videoOverlaySystem?.videoSprite) {
-        console.log('🍂 [CityScene] Destroying old video for AUTUMN...')
         this.videoOverlaySystem.destroy()
       }
       
@@ -499,15 +492,8 @@ export default class CityScene extends Phaser.Scene {
             loopStart: 0,     // Loop from beginning
             loopEnd: null     // Loop to end of video
           })
-          console.log('🍂 [CityScene] Autumn video started (AUTUMN)')
         }
       }, 100)
-    } else {
-      // ❌ Other seasons: Hide video
-      if (this.videoOverlaySystem?.videoSprite) {
-        console.log(`🎬 [CityScene] Hiding video (${currentSeason.toUpperCase()})`)
-        this.videoOverlaySystem.hide()
-      }
     }
   }
 
