@@ -204,17 +204,30 @@ function handleGlobalPointerMove(scene, pointer) {
 }
 
 function handleGlobalPointerUp(scene) {
+  const store = useCityStore.getState()
+  
   if (scene.isDragging && scene.hoveredBuilding) {
-    console.log(`🎯 [DROP] Placed building (changes in memory, click Save Layout to persist)`)
+    // 🎯 Building was dragged — update layout
     updateCityLayoutMemory(scene)
     resetGroundLighting(scene)
+    logger.debug(`Dropped building`)
+  } else if (scene.hoveredBuilding && !scene.isDragging) {
+    // ✅ Building was clicked (not dragged) — SELECT it for transform
+    const building = scene.hoveredBuilding
+    const buildingData = scene.placedBuildings.find(b => b.sprite === building.sprite || b === building)
+    
+    if (buildingData) {
+      logger.debug(`Selected ${buildingData.type} for transform`)
+      // Update store with selected building
+      store.setSelectedBuilding(buildingData)
+      // Emit event to trigger visual feedback
+      scene.events.emit('select-building', buildingData.sprite || buildingData)
+    }
   }
 
   // ✅ Reset drag state
   scene.isDragging = false
   scene.dragThresholdMet = false
-  
-  // ✅ Transform buttons now handled by TransformPanel sidebar — no hover UI
   scene.hoveredBuilding = null
   hideTransformHandles(scene)
 }

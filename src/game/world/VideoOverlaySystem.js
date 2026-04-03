@@ -158,7 +158,7 @@ export class VideoOverlaySystem {
     // ✅ LOCK ALPHA TO 1.0 ALWAYS - Video overlay should always be fully opaque
     if (this.videoSprite) {
       if (alpha !== 1.0) {
-        console.warn(`🎬 [Video] Alpha change blocked! Requested: ${alpha}, locked to: 1.0`)
+        logger.debug(`Alpha change blocked (locked to 1.0)`)
       }
       this.videoSprite.setAlpha(1.0)  // Always 1.0, never change
     }
