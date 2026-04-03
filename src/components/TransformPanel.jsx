@@ -41,9 +41,10 @@ export function TransformPanel() {
   }
 
   // ✅ Compare objects by their position (unique identifier for placed buildings)
+  // selectedBuilding stores float coords, but cityLayout has rounded coords
   const isObjectSelected = (obj) => {
     if (!selectedBuilding) return false
-    return selectedBuilding.x === obj.x && selectedBuilding.y === obj.y
+    return Math.round(selectedBuilding.x) === obj.x && Math.round(selectedBuilding.y) === obj.y
   }
 
   // Handle close button

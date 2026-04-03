@@ -104,11 +104,15 @@ function handleRightClick(scene, pointer) {
 
   if (!clickedBuilding) return
 
+  // ✅ Round tile coords for layout matching (buildings store floats)
+  const roundedX = Math.round(clickedBuilding.tileX)
+  const roundedY = Math.round(clickedBuilding.tileY)
+
   // ✅ Check if building is locked
   const buildingFromLayout = store.cityLayout.find(b => 
     b.type === clickedBuilding.type && 
-    b.x === clickedBuilding.tileX && 
-    b.y === clickedBuilding.tileY
+    b.x === roundedX && 
+    b.y === roundedY
   )
 
   if (buildingFromLayout?.locked) {
@@ -116,14 +120,14 @@ function handleRightClick(scene, pointer) {
     return
   }
 
-  // ✅ Duplicate: offset by 1 tile down-right
+  // ✅ Duplicate: offset by 1 tile down-right (round for layout coords)
   const duplicateData = {
     type: clickedBuilding.type,
-    x: clickedBuilding.tileX + 1,
-    y: clickedBuilding.tileY + 1,
+    x: roundedX + 1,
+    y: roundedY + 1,
     scale: buildingFromLayout?.scale || 1.0,
     angle: buildingFromLayout?.angle || 0,
-    id: clickedBuilding.type + '-' + (clickedBuilding.tileX + 1) + '-' + (clickedBuilding.tileY + 1) + '-' + Date.now()
+    id: clickedBuilding.type + '-' + (roundedX + 1) + '-' + (roundedY + 1) + '-' + Date.now()
   }
 
   // Add to layout in memory
@@ -215,11 +219,14 @@ function handleGlobalPointerUp(scene) {
     if (buildingData) {
       logger.debug(`Selected ${buildingData.type} for transform`)
       
-      // ✅ buildingData now includes locked state from spawn, but sync with layout as backup
+      // ✅ buildingData now stores exact floats, but match layout with rounded coords
+      const roundedX = Math.round(buildingData.x)
+      const roundedY = Math.round(buildingData.y)
+
       const layoutEntry = store.cityLayout.find(b => 
         b.type === buildingData.type && 
-        b.x === buildingData.x && 
-        b.y === buildingData.y
+        b.x === roundedX && 
+        b.y === roundedY
       )
       const selectedBuildingWithLocked = {
         ...buildingData,
@@ -253,9 +260,10 @@ function updateBuildingTilePosition(scene, building) {
     scene.yStep
   )
 
-  // ✅ Use Math.floor for precise positioning (no drift from rounding)
-  building.tileX = Math.floor(tilePos.x + 0.5)  // Round to nearest integer
-  building.tileY = Math.floor(tilePos.y + 0.5)
+  // ✅ Keep exact float tile coordinates (no rounding)
+  // This ensures perfect alignment with ground tiles on reload
+  building.tileX = tilePos.x
+  building.tileY = tilePos.y
   building.worldX = building.sprite.x
   building.worldY = building.sprite.y
 }
@@ -267,11 +275,14 @@ function updateGroundLighting(scene, building) {
   })
 
   // Light up tiles around the building
+  // Use rounded tile coords for tile selection (building tileX/Y are floats)
+  const baseTileX = Math.round(building.tileX)
+  const baseTileY = Math.round(building.tileY)
   const radius = 2
   for (let dy = -radius; dy <= radius; dy++) {
     for (let dx = -radius; dx <= radius; dx++) {
-      const tileX = building.tileX + dx
-      const tileY = building.tileY + dy
+      const tileX = baseTileX + dx
+      const tileY = baseTileY + dy
 
       if (tileX >= 0 && tileX < scene.cols && tileY >= 0 && tileY < scene.rows) {
         const tileIndex = tileY * scene.cols + tileX
@@ -296,20 +307,24 @@ function updateCityLayoutMemory(scene) {
   
   const newLayout = scene.placedBuildings.map(building => {
     // ✅ Preserve locked state from original cityLayout
+    // Round tile coords for layout matching (buildings store floats for precision)
+    const roundedX = Math.round(building.tileX)
+    const roundedY = Math.round(building.tileY)
+    
     const originalEntry = store.cityLayout.find(b => 
       b.type === building.type && 
-      b.x === building.x && 
-      b.y === building.y
+      b.x === roundedX && 
+      b.y === roundedY
     )
     
     return {
       type: building.type,
-      x: building.tileX,
-      y: building.tileY,
+      x: roundedX,  // ✅ Round only for storage
+      y: roundedY,
       scale: building.sprite.scaleX,
       angle: building.sprite.angle,
       locked: building.locked ?? originalEntry?.locked ?? false,  // ✅ Keep lock state!
-      id: building.type + '-' + building.tileX + '-' + building.tileY // Generate stable ID
+      id: building.type + '-' + roundedX + '-' + roundedY // Generate stable ID
     }
   })
 
