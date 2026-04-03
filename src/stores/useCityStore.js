@@ -345,28 +345,36 @@ export const useCityStore = create(
           return
         }
 
-        // Find the building in the layout
+        const newLockedState = !state.selectedBuilding.locked
+        logger.info(`${state.selectedBuilding.type} is now ${newLockedState ? 'LOCKED' : 'UNLOCKED'}`)
+
+        // Update cityLayout with new lock state
         const updatedLayout = state.cityLayout.map(b => {
           if (b.type === state.selectedBuilding.type && 
               b.x === state.selectedBuilding.x && 
               b.y === state.selectedBuilding.y) {
-            const isNowLocked = !b.locked
-            logger.info(`${b.type} is now ${isNowLocked ? 'LOCKED' : 'UNLOCKED'}`)
-            return { ...b, locked: isNowLocked }
+            return { ...b, locked: newLockedState }
           }
           return b
         })
-
-        // Update layout in memory
         state.updateCityLayoutMemory(updatedLayout)
 
-        // Update selected building with new locked state (find by position, not reference)
-        const updatedBuilding = updatedLayout.find(b => 
-          b.type === state.selectedBuilding.type && 
-          b.x === state.selectedBuilding.x && 
-          b.y === state.selectedBuilding.y
-        )
-        set({ selectedBuilding: updatedBuilding })
+        // ✅ Also update scene.placedBuildings so it stays in sync
+        if (state.phaserGame) {
+          const scene = state.phaserGame.scene.getScene('CityScene')
+          if (scene?.placedBuildings) {
+            scene.placedBuildings.forEach(building => {
+              if (building.type === state.selectedBuilding.type &&
+                  building.x === state.selectedBuilding.x &&
+                  building.y === state.selectedBuilding.y) {
+                building.locked = newLockedState
+              }
+            })
+          }
+        }
+
+        // ✅ Preserve all selectedBuilding properties (sprite, tileX, tileY, etc) and just toggle locked
+        set({ selectedBuilding: { ...state.selectedBuilding, locked: newLockedState } })
       },
 
       /**

@@ -72,10 +72,13 @@ export function spawnBuildings(scene, cityLayout) {
     const buildingData = {
       type: obj.type,
       key: obj.type,           // ✅ Asset key is now the same as type
-      tileX: obj.x,
+      x: obj.x,                // ✅ Tile coordinates (match cityLayout)
+      y: obj.y,
+      tileX: obj.x,            // ✅ Alias for compatibility
       tileY: obj.y,
       worldX: pos.x,
       worldY: pos.y,
+      locked: obj.locked ?? false,  // ✅ Include lock state from layout
       sprite: building
     }
 
@@ -134,7 +137,7 @@ function handleRightClick(scene, pointer) {
 }
 
 function handleGlobalPointerDown(scene, pointer) {
-  // ✅ Find UNLOCKED building under pointer for drag
+  // ✅ Find ANY building under pointer (locked or unlocked)
   const store = useCityStore.getState()
   
   const clickedBuilding = scene.placedBuildings.find(b => {
@@ -144,26 +147,13 @@ function handleGlobalPointerDown(scene, pointer) {
     const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
     
     // Check if this building is within radius
-    if (dx*dx + dy*dy >= radius*radius) return false
-    
-    // ✅ SKIP locked buildings — let pointer pass through
-    const buildingFromLayout = store.cityLayout.find(bl => 
-      bl.type === b.type && 
-      bl.x === b.tileX && 
-      bl.y === b.tileY
-    )
-    
-    if (buildingFromLayout?.locked) {
-      logger.debug(`Skipping interaction with locked ${b.type}`)
-      return false
-    }
-    
-    return true  // Unlocked — interact
+    return dx*dx + dy*dy < radius*radius
   })
 
   if (clickedBuilding) {
-    // ✅ Prepare for drag (unlocked only)
-    logger.debug(`Preparing drag for ${clickedBuilding.type}`)
+    // ✅ Set hoveredBuilding for ALL buildings (locked and unlocked)
+    // We'll check lock state later when deciding whether to drag
+    logger.debug(`Clicked ${clickedBuilding.type} ${clickedBuilding.locked ? '(locked)' : '(unlocked)'}`)
     scene.pointerDownPos = { x: pointer.worldX, y: pointer.worldY }
     scene.dragOffset.x = 0
     scene.dragOffset.y = 0
@@ -177,6 +167,12 @@ function handleGlobalPointerMove(scene, pointer) {
 
   // ✅ Drag while pointer is down (not just when threshold met)
   if (pointer.isDown) {
+    // ✅ Prevent dragging LOCKED buildings
+    if (building.locked) {
+      logger.debug(`Cannot drag locked ${building.type}`)
+      return
+    }
+
     const dist = Phaser.Math.Distance.Between(
       scene.pointerDownPos.x,
       scene.pointerDownPos.y,
@@ -218,10 +214,22 @@ function handleGlobalPointerUp(scene) {
     
     if (buildingData) {
       logger.debug(`Selected ${buildingData.type} for transform`)
-      // Update store with selected building
-      store.setSelectedBuilding(buildingData)
+      
+      // ✅ buildingData now includes locked state from spawn, but sync with layout as backup
+      const layoutEntry = store.cityLayout.find(b => 
+        b.type === buildingData.type && 
+        b.x === buildingData.x && 
+        b.y === buildingData.y
+      )
+      const selectedBuildingWithLocked = {
+        ...buildingData,
+        locked: layoutEntry?.locked ?? buildingData.locked ?? false  // Prefer layout, fallback to buildingData
+      }
+      
+      // Update store with selected building (including locked state)
+      store.setSelectedBuilding(selectedBuildingWithLocked)
       // Emit event to trigger visual feedback
-      scene.events.emit('select-building', buildingData.sprite || buildingData)
+      scene.events.emit('select-building', selectedBuildingWithLocked.sprite || selectedBuildingWithLocked)
     }
   }
 
@@ -245,8 +253,9 @@ function updateBuildingTilePosition(scene, building) {
     scene.yStep
   )
 
-  building.tileX = Math.round(tilePos.x)
-  building.tileY = Math.round(tilePos.y)
+  // ✅ Use Math.floor for precise positioning (no drift from rounding)
+  building.tileX = Math.floor(tilePos.x + 0.5)  // Round to nearest integer
+  building.tileY = Math.floor(tilePos.y + 0.5)
   building.worldX = building.sprite.x
   building.worldY = building.sprite.y
 }
@@ -283,17 +292,29 @@ function resetGroundLighting(scene) {
 function updateCityLayoutMemory(scene) {
   // Create a new layout array with updated positions and transforms
   // Note: 'type' is now the asset key (unified from registry)
-  const newLayout = scene.placedBuildings.map(building => ({
-    type: building.type,
-    x: building.tileX,
-    y: building.tileY,
-    scale: building.sprite.scaleX,
-    angle: building.sprite.angle,
-    id: building.type + '-' + building.tileX + '-' + building.tileY // Generate stable ID
-  }))
+  const store = useCityStore.getState()
+  
+  const newLayout = scene.placedBuildings.map(building => {
+    // ✅ Preserve locked state from original cityLayout
+    const originalEntry = store.cityLayout.find(b => 
+      b.type === building.type && 
+      b.x === building.x && 
+      b.y === building.y
+    )
+    
+    return {
+      type: building.type,
+      x: building.tileX,
+      y: building.tileY,
+      scale: building.sprite.scaleX,
+      angle: building.sprite.angle,
+      locked: building.locked ?? originalEntry?.locked ?? false,  // ✅ Keep lock state!
+      id: building.type + '-' + building.tileX + '-' + building.tileY // Generate stable ID
+    }
+  })
 
   // Update the store (memory only, not persisted)
-  useCityStore.getState().updateCityLayoutMemory(newLayout)
+  store.updateCityLayoutMemory(newLayout)
 
   // Update scene reference
   scene.cityLayout = newLayout

@@ -48,6 +48,9 @@ export function TransformBar() {
 
   // Handle transform button click (toggle mode)
   const handleTransformClick = (mode) => {
+    // ✅ Locked buildings cannot be transformed
+    if (selectedBuilding?.locked) return
+    
     if (transformMode === mode) {
       setTransformMode(null)
     } else {
@@ -250,16 +253,18 @@ export function TransformBar() {
       {/* Main control buttons */}
       <div className="transform-bar-controls">
         <button
-          className={`transform-bar-btn ${transformMode === 'rotate' ? 'active' : ''}`}
+          className={`transform-bar-btn ${transformMode === 'rotate' ? 'active' : ''} ${selectedBuilding?.locked ? 'disabled' : ''}`}
           onClick={() => handleTransformClick('rotate')}
-          title="Rotate object"
+          disabled={selectedBuilding?.locked}
+          title={selectedBuilding?.locked ? '🔒 Unlock to rotate' : 'Rotate object'}
         >
           🔄 Rotate
         </button>
         <button
-          className={`transform-bar-btn ${transformMode === 'resize' ? 'active' : ''}`}
+          className={`transform-bar-btn ${transformMode === 'resize' ? 'active' : ''} ${selectedBuilding?.locked ? 'disabled' : ''}`}
           onClick={() => handleTransformClick('resize')}
-          title="Resize object"
+          disabled={selectedBuilding?.locked}
+          title={selectedBuilding?.locked ? '🔒 Unlock to resize' : 'Resize object'}
         >
           ↔️ Resize
         </button>
@@ -268,9 +273,10 @@ export function TransformBar() {
         <div className="transform-separator"></div>
         
         <button
-          className="transform-bar-btn delete-btn"
+          className={`transform-bar-btn delete-btn ${selectedBuilding?.locked ? 'disabled' : ''}`}
           onClick={handleDelete}
-          title="Delete object"
+          disabled={selectedBuilding?.locked}
+          title={selectedBuilding?.locked ? '🔒 Unlock to delete' : 'Delete object'}
         >
           ✖️ Delete
         </button>

@@ -175,6 +175,23 @@
   box-shadow: 0 0 12px rgba(152, 136, 176, 0.3);
 }
 
+/* Disabled state for locked buildings */
+.transform-bar-btn:disabled,
+.transform-bar-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.transform-bar-btn:disabled:hover,
+.transform-bar-btn.disabled:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
 /* Separator */
 .transform-separator {
   width: 1px;
