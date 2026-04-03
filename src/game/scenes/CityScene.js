@@ -487,7 +487,7 @@ export default class CityScene extends Phaser.Scene {
             speed: 0.8,     // ☀️ Gentle, warm effect
             blend: 'SCREEN',  // ✅ SCREEN for original colors
             loopStart: 0,     // Loop from beginning
-            loopEnd: null     // Loop to end of video
+            loopEnd: 45       // Loop to 0:45 (end before green background)
           })
         }
       }, 100)
