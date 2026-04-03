@@ -15,8 +15,15 @@ export class VideoOverlaySystem {
   }
 
   init() {
-    // Ready for video playback
-    // Mark video sprites to exclude from hover effects
+    // Set up camera event listener to keep video overlay centered on screen
+    this.scene.cameras.main.on('update', () => {
+      if (this.videoSprite) {
+        const camera = this.scene.cameras.main
+        // ✅ Video stays at screen center (scrollFactor 0,0 is screen-fixed)
+        this.videoSprite.setPosition(camera.centerX, camera.centerY)
+        this.videoSprite.setDisplaySize(camera.width, camera.height)
+      }
+    })
   }
 
   /**
@@ -49,20 +56,20 @@ export class VideoOverlaySystem {
       if (!this.videoSprite) return
 
       this.videoSprite.setOrigin(0.5, 0.5)
-      // ✅ Position at camera center (fixed to camera, not world)
+      // ✅ Position at screen center (fixed to camera, not world)
       const camera = this.scene.cameras.main
       this.videoSprite.setPosition(camera.centerX, camera.centerY)
       this.videoSprite.setDepth(9999)
       this.videoSprite.setBlendMode(blend)
       this.videoSprite.setAlpha(alpha)
-      this.videoSprite.setScrollFactor(0, 0)  // ✅ Fixed to camera (doesn't pan)
+      this.videoSprite.setScrollFactor(0, 0)  // ✅ Fixed to screen (doesn't move with camera pan)
       
       // Mark as video overlay to exclude from hover effects
       this.videoSprite._isVideoOverlay = true
       
       logger.info(`Loaded video: ${videoKey}`)  
 
-      // ✅ Size to match camera/canvas (not native dimensions)
+      // ✅ Size to match camera viewport (not native dimensions)
       this.videoSprite.setDisplaySize(camera.width, camera.height)
 
       // Set playback speed

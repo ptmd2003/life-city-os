@@ -24,10 +24,11 @@ export const BUILDING_INTERACTION_RADIUS = 0.25
 // Camera
 export const CAMERA_PAN_SPEED = 8
 export const CAMERA_ZOOM_MIN = 0.5
-export const CAMERA_ZOOM_MAX = 2.0
+export const CAMERA_ZOOM_MAX = 2.6
 export const CAMERA_ZOOM_INITIAL = 0.6
 export const CAMERA_ZOOM_SENSITIVITY = 0.001
 export const CAMERA_SMOOTHING = 0.1
+export const VIEWPORT_ASPECT_RATIO = 16 / 9
 export const CAMERA_Y_OFFSET = -250 // Negative moves ground down on screen
 export const CAMERA_BOTTOM_PAN_LIMIT = 0.3 // Reduce pan distance downward (0-1, lower = tighter)
 

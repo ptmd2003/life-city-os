@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { CAMERA_Y_OFFSET, CAMERA_BOTTOM_PAN_LIMIT } from '../constants.js'
+import { CAMERA_Y_OFFSET, CAMERA_BOTTOM_PAN_LIMIT, CAMERA_ZOOM_MAX, VIEWPORT_ASPECT_RATIO } from '../constants.js'
 
 export function setupCamera(scene) {
   // Calculate the true center of the isometric world
@@ -25,7 +25,7 @@ export function setupCamera(scene) {
     const newZoom = Phaser.Math.Clamp(
       scene.cameraState.zoomLevel - deltaY * 0.001,
       0.5,
-      2
+      CAMERA_ZOOM_MAX
     )
     scene.cameraState.zoomLevel = newZoom
     scene.cameras.main.setZoom(newZoom)
