@@ -118,6 +118,20 @@ export function TransformBar() {
       const sprite = getBuilding(selectedBuilding)
       if (sprite) {
         bringToFront(sprite)
+        // ✅ Persist to layout so it survives reload
+        const scene = getScene()
+        if (scene) {
+          const store = useCityStore.getState()
+          const updatedLayout = store.cityLayout.map(b => {
+            if (b.type === selectedBuilding.type &&
+                Math.abs(b.x - selectedBuilding.tileX) < 0.01 &&
+                Math.abs(b.y - selectedBuilding.tileY) < 0.01) {
+              return { ...b, depthOffset: sprite.depthOffset }
+            }
+            return b
+          })
+          store.updateCityLayoutMemory(updatedLayout)
+        }
       }
     }
   }
@@ -128,6 +142,20 @@ export function TransformBar() {
       const sprite = getBuilding(selectedBuilding)
       if (sprite) {
         sendToBack(sprite)
+        // ✅ Persist to layout so it survives reload
+        const scene = getScene()
+        if (scene) {
+          const store = useCityStore.getState()
+          const updatedLayout = store.cityLayout.map(b => {
+            if (b.type === selectedBuilding.type &&
+                Math.abs(b.x - selectedBuilding.tileX) < 0.01 &&
+                Math.abs(b.y - selectedBuilding.tileY) < 0.01) {
+              return { ...b, depthOffset: sprite.depthOffset }
+            }
+            return b
+          })
+          store.updateCityLayoutMemory(updatedLayout)
+        }
       }
     }
   }
@@ -293,16 +321,18 @@ export function TransformBar() {
         <div className="transform-separator"></div>
         
         <button
-          className="transform-bar-btn"
+          className={`transform-bar-btn ${selectedBuilding?.locked ? 'disabled' : ''}`}
           onClick={handleBringToFront}
-          title="Bring to front layer"
+          disabled={selectedBuilding?.locked}
+          title={selectedBuilding?.locked ? '🔒 Unlock to layer' : 'Bring to front layer'}
         >
           ⬆️
         </button>
         <button
-          className="transform-bar-btn"
+          className={`transform-bar-btn ${selectedBuilding?.locked ? 'disabled' : ''}`}
           onClick={handleSendToBack}
-          title="Send to back layer"
+          disabled={selectedBuilding?.locked}
+          title={selectedBuilding?.locked ? '🔒 Unlock to layer' : 'Send to back layer'}
         >
           ⬇️
         </button>

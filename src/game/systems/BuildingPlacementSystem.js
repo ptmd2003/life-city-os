@@ -62,6 +62,7 @@ export function spawnBuildings(scene, cityLayout) {
     // apply saved transforms if present
     if (obj.scale) building.setScale(obj.scale)
     if (obj.angle) building.setAngle(obj.angle)
+    if (obj.depthOffset !== undefined) building.depthOffset = obj.depthOffset  // ✅ Restore layer offset
 
     // ✅ Store tile coordinates on sprite for isometric depth sorting
     building.tileX = obj.x
