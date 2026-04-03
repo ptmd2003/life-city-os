@@ -38,8 +38,11 @@ export function TransformBar() {
     const scene = getScene()
     if (!scene) return null
     
+    // ✅ Match with float precision (tolerance for epsilon comparison)
     const matched = scene.placedBuildings?.find(b => {
-      return b.tileX === dataBuilding.x && b.tileY === dataBuilding.y
+      return b.type === dataBuilding.type &&
+             Math.abs(b.tileX - dataBuilding.tileX) < 0.01 && 
+             Math.abs(b.tileY - dataBuilding.tileY) < 0.01
     })
     
     if (!matched) return null
