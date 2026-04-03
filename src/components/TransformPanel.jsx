@@ -41,10 +41,10 @@ export function TransformPanel() {
   }
 
   // ✅ Compare objects by their position (unique identifier for placed buildings)
-  // selectedBuilding stores float coords, but cityLayout has rounded coords
+  // selectedBuilding stores tileX/Y as floats, layout has x/y as integers
   const isObjectSelected = (obj) => {
     if (!selectedBuilding) return false
-    return Math.round(selectedBuilding.x) === obj.x && Math.round(selectedBuilding.y) === obj.y
+    return Math.round(selectedBuilding.tileX) === obj.x && Math.round(selectedBuilding.tileY) === obj.y
   }
 
   // Handle close button

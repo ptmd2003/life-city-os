@@ -72,10 +72,8 @@ export function spawnBuildings(scene, cityLayout) {
     const buildingData = {
       type: obj.type,
       key: obj.type,           // ✅ Asset key is now the same as type
-      x: obj.x,                // ✅ Tile coordinates (match cityLayout)
-      y: obj.y,
-      tileX: obj.x,            // ✅ Alias for compatibility
-      tileY: obj.y,
+      tileX: obj.x,            // ✅ Exact tile X (floats for precision)
+      tileY: obj.y,            // ✅ Exact tile Y
       worldX: pos.x,
       worldY: pos.y,
       locked: obj.locked ?? false,  // ✅ Include lock state from layout
@@ -104,7 +102,7 @@ function handleRightClick(scene, pointer) {
 
   if (!clickedBuilding) return
 
-  // ✅ Round tile coords for layout matching (buildings store floats)
+  // ✅ Round tile coords for layout matching (only buildingData.tileX/Y are definitive)
   const roundedX = Math.round(clickedBuilding.tileX)
   const roundedY = Math.round(clickedBuilding.tileY)
 
@@ -219,9 +217,10 @@ function handleGlobalPointerUp(scene) {
     if (buildingData) {
       logger.debug(`Selected ${buildingData.type} for transform`)
       
-      // ✅ buildingData now stores exact floats, but match layout with rounded coords
-      const roundedX = Math.round(buildingData.x)
-      const roundedY = Math.round(buildingData.y)
+      // ✅ buildingData only stores tileX/Y as floats — no separate x/y
+      // Round only for layout matching
+      const roundedX = Math.round(buildingData.tileX)
+      const roundedY = Math.round(buildingData.tileY)
 
       const layoutEntry = store.cityLayout.find(b => 
         b.type === buildingData.type && 
