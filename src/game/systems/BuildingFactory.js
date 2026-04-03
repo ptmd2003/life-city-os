@@ -1,18 +1,23 @@
 import { getSpriteClass, getSpriteDimensions, getTileSizeInPixels } from '../sprites/assetRegistry.js'
+import logger from '../logger.js'
 
 /**
  * Factory to create a building sprite from an asset key
  * 
- * @param {Phaser.Scene} scene - The Phaser scene
- * @param {string} assetKey - The asset key (matches filename without .png)
+ * Creates either a custom sprite class instance (if available) or a generic image sprite.
+ * Automatically scales sprites to fit within their designated tile space and sets proper origin
+ * for isometric positioning (center-bottom).
+ * 
+ * @param {Phaser.Scene} scene - The Phaser scene to add the sprite to
+ * @param {string} assetKey - The asset key (matches filename without .png) from assetRegistry
  * @param {number} x - Screen X position
  * @param {number} y - Screen Y position (used for depth sorting)
- * @returns {Phaser.GameObjects.Sprite|Phaser.GameObjects.Image|null}
+ * @returns {Phaser.GameObjects.Sprite|Phaser.GameObjects.Image|null} The created sprite or null if asset not found
  */
 export function createBuilding(scene, assetKey, x, y) {
   // Check if the asset is loaded in the scene
   if (!scene.textures.exists(assetKey)) {
-    console.warn(`Asset not found: ${assetKey}`)
+    logger.warn(`Asset not found: ${assetKey}`)
     return null
   }
 

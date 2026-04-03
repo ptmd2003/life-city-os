@@ -48,19 +48,32 @@ export default function PhaserGame() {
 
     if (gameRef.current) return
 
-    console.log('🎮 [PhaserGame] Creating Phaser game')
-    const game = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: 'game-container',
-      width: containerRef.current.offsetWidth,
-      height: window.innerHeight,
-      backgroundColor: '#1a1a2e',
-      scene: [CityScene],
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
-    })
+    if (!containerRef.current) {
+      console.warn('⚠️  [PhaserGame] Container not ready')
+      return
+    }
 
-    gameRef.current = game
-    setPhaserGame(game)
+    console.log('🎮 [PhaserGame] Creating Phaser game')
+    try {
+      const game = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: containerRef.current,
+        width: containerRef.current.offsetWidth,
+        height: window.innerHeight,
+        backgroundColor: '#1a1a2e',
+        scene: [CityScene],
+        scale: { 
+          mode: Phaser.Scale.RESIZE, 
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          aspectRatio: 16 / 9  // 🎬 Lock canvas to 16:9 (all videos are 16:9)
+        },
+      })
+
+      gameRef.current = game
+      setPhaserGame(game)
+    } catch (error) {
+      console.error('❌ [PhaserGame] Error creating game:', error)
+    }
 
     return () => {
       if (gameRef.current) {
@@ -70,5 +83,5 @@ export default function PhaserGame() {
     }
   }, [isHydrated, setPhaserGame])
 
-  return <div ref={containerRef} id="game-container" style={{ flex: 1 }} />
+  return <div ref={containerRef} id="game-container" style={{ flex: 1, minWidth: 0 }} />
 }

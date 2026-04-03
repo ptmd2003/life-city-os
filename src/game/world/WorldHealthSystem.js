@@ -1,7 +1,23 @@
 import { WorldState } from "./WorldState";
 
+/**
+ * WorldHealthSystem — Calculates world health score based on user activity
+ * 
+ * Monitors check-ins across health, study, and finance spaces.
+ * Decaying formula: 
+ * - < 1 day idle: +3
+ * - < 3 days idle: +2
+ * - < 7 days idle: +1
+ * - 7+ days idle: +0
+ * 
+ * Total score: 0-9 (perfect health when all spaces checked within 24h)
+ */
 export class WorldHealthSystem {
 
+  /**
+   * Get current world health score (0-9)
+   * @returns {number} Health score
+   */
   static getWorldHealth() {
 
     const now = Date.now();

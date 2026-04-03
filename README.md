@@ -131,7 +131,7 @@ git push origin main
 ## 🐛 Known Issues & Next Steps
 
 - [ ] Time display in Sidebar (Stage 2)
-- [ ] Day/night cycle (SkySystem integration)
+- [ ] Day/night cycle visuals
 - [ ] Population & economy systems
 - [ ] NPCs & daily routines
 

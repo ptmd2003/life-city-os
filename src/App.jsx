@@ -1,8 +1,10 @@
 import './App.css'
 import { useEffect, useState } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
 import PhaserGame from './game/PhaserGame'
-import Sidebar from './components/Sidebar'
+import LifeOSSidebar from './components/LifeOSSidebar'
 import { TransformPanel } from './components/TransformPanel'
+import { TransformBar } from './components/TransformBar'
 
 function App() {
   const [appReady, setAppReady] = useState(false)
@@ -25,11 +27,23 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
-      <TransformPanel />
-      <PhaserGame />
-      <Sidebar />
-    </div>
+    <>
+      <div style={{ display: 'flex', width: '100vw', height: '100vh' }}>
+        <ErrorBoundary name="TransformPanel">
+          <TransformPanel />
+        </ErrorBoundary>
+        <ErrorBoundary name="GameView">
+          <PhaserGame />
+        </ErrorBoundary>
+        <ErrorBoundary name="LifeOSSidebar">
+          <LifeOSSidebar />
+        </ErrorBoundary>
+      </div>
+      {/* Transform Bar — Bottom dock-style controls */}
+      <ErrorBoundary name="TransformBar">
+        <TransformBar />
+      </ErrorBoundary>
+    </>
   )
 }
 

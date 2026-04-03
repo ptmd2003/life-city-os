@@ -1,47 +1,97 @@
 import Phaser from 'phaser'
+import { CAMERA_Y_OFFSET, CAMERA_BOTTOM_PAN_LIMIT } from '../constants.js'
 
 export function setupCamera(scene) {
+  // Calculate the true center of the isometric world
+  // This is where the game world center is, not screen center
   const centerX = scene.scale.width / 2
-  const centerY = scene.originY + (scene.cols + scene.rows) * (scene.tileH / 4)
+  const centerY = scene.originY + (scene.cols + scene.rows) * (scene.tileH / 4) + CAMERA_Y_OFFSET
 
   scene.worldCenter = { x: centerX, y: centerY }
 
   scene.cameraState = {
-    targetX: centerX,
-    targetY: centerY,
-    panSpeed: 8
+    // Camera always looks at this point (ground center)
+    centerX: centerX,
+    centerY: centerY,
+    panSpeed: 8,
+    zoomLevel: 0.6
   }
 
   scene.cameras.main.setZoom(0.6)
+  scene.cameras.main.centerOn(centerX, centerY)
 
+  // Mouse wheel for zoom (around screen center)
   scene.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
-    const zoom = scene.cameras.main.zoom
-
-    scene.cameras.main.setZoom(
-      Phaser.Math.Clamp(zoom - deltaY * 0.001, 0.3, 2)
+    const newZoom = Phaser.Math.Clamp(
+      scene.cameraState.zoomLevel - deltaY * 0.001,
+      0.5,
+      2
     )
+    scene.cameraState.zoomLevel = newZoom
+    scene.cameras.main.setZoom(newZoom)
+    
+    // After zoom, recenter on worldCenter to keep ground fixed
+    scene.cameras.main.centerOn(scene.cameraState.centerX, scene.cameraState.centerY)
   })
 }
 
 export function updateCamera(scene) {
-  let panX = 0
-  let panY = 0
-
-  if (scene.keys.up.isDown || scene.keys.w.isDown) panY -= scene.cameraState.panSpeed
-  if (scene.keys.down.isDown || scene.keys.s.isDown) panY += scene.cameraState.panSpeed
-  if (scene.keys.left.isDown || scene.keys.a.isDown) panX -= scene.cameraState.panSpeed
-  if (scene.keys.right.isDown || scene.keys.d.isDown) panX += scene.cameraState.panSpeed
-
-  if (panX !== 0 || panY !== 0) {
-    scene.cameraState.targetX += panX / scene.cameras.main.zoom
-    scene.cameraState.targetY += panY / scene.cameras.main.zoom
+  // ✅ Camera follows pan offset (A/S/W/D keys move camera around world)
+  // Clamp position to background bounds
+  if (scene.backgroundBounds) {
+    const camera = scene.cameras.main
+    const zoomLevel = camera.zoom || 1.0
+    const minZoom = 0.5 // Max zoom-out level — viewport / minZoom = background size
+    
+    // Calculate viewport size at current zoom
+    const viewportHalfWidth = scene.scale.width / (2 * zoomLevel)
+    const viewportHalfHeight = scene.scale.height / (2 * zoomLevel)
+    
+    // Clamp camera X and Y to stay within background bounds
+    const { left, right, top, bottom } = scene.backgroundBounds
+    
+    scene.cameraState.centerX = Phaser.Math.Clamp(
+      scene.cameraState.centerX,
+      left + viewportHalfWidth,
+      right - viewportHalfWidth
+    )
+    
+    // ✅ Tighter bottom pan limit — S key can't pan too far down
+    const normalMaxY = bottom - viewportHalfHeight
+    const minY = top + viewportHalfHeight
+    const panRangeDown = normalMaxY - scene.worldCenter.y
+    const effectiveMaxY = scene.worldCenter.y + (panRangeDown * CAMERA_BOTTOM_PAN_LIMIT)
+    
+    scene.cameraState.centerY = Phaser.Math.Clamp(
+      scene.cameraState.centerY,
+      minY,
+      effectiveMaxY  // Reduced bottom limit
+    )
   }
+  
+  // Center camera on clamped position
+  scene.cameras.main.centerOn(scene.cameraState.centerX, scene.cameraState.centerY)
+}
 
-  const smooth = 0.1
-
-  scene.cameras.main.scrollX +=
-    (scene.cameraState.targetX - scene.cameras.main.scrollX) * smooth
-
-  scene.cameras.main.scrollY +=
-    (scene.cameraState.targetY - scene.cameras.main.scrollY) * smooth
+/**
+ * Pan camera with directional movement
+ * Call from scene.update() or input handlers
+ */
+export function panCamera(scene, direction) {
+  const panStep = 20 // pixels per pan
+  
+  switch(direction) {
+    case 'up':
+      scene.cameraState.centerY -= panStep
+      break
+    case 'down':
+      scene.cameraState.centerY += panStep
+      break
+    case 'left':
+      scene.cameraState.centerX -= panStep
+      break
+    case 'right':
+      scene.cameraState.centerX += panStep
+      break
+  }
 } 

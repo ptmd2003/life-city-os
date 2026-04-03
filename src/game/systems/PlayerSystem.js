@@ -1,15 +1,11 @@
-import Cat from '../sprites/cat.js'
+// Cat NPC System — PLANNED FOR FUTURE RELEASE (Session 12+)
+// Currently disabled while core systems stabilize.
+// When re-enabling, ensure:
+// - Depth sorting formula matches buildings (y + displayHeight * 0.5 + 1000)
+// - Cat sprite is added to isoGroup for proper layering
+// - Movement/pathfinding system is separate from building dragging
 
 export function spawnPlayer(scene) {
-
-  const centerX = scene.scale.width / 2
-  const centerY = scene.originY + (scene.cols + scene.rows) * (scene.tileH / 4)
-
-  scene.cat = new Cat(scene, centerX - 100, centerY - 20)
-  
-  // ✅ Cat depth: use same formula as buildings (y + displayHeight * 0.5 + 1000)
-  const catY = centerY - 20
-  scene.cat.setDepth(catY + scene.cat.displayHeight * 0.5 + 1000)
-
-  // cat is managed separately from isoGroup so we can control its depth manually
+  // Player spawn system — currently placeholder for Cat NPC
+  // Will be populated when Cat system is re-enabled
 }

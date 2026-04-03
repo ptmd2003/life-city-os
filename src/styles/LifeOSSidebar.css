@@ -1,0 +1,596 @@
+/* LifeOSSidebar — Full Design System Alignment */
+
+/* Design Tokens — complete palette + typography + spacing */
+:root {
+  /* Colors */
+  --matcha-core:   #A8C5A0;
+  --bamboo-mist:   #C8DFC8;
+  --shizen-white:  #F0F5F0;
+  --nori-dark:     #3D5A44;
+  --wa-sage:       #B7CEB5;
+  --kumo-cloud:    #E8F0E8;
+  --tsuki-glow:    #D4EBD4;
+  --mossy-shadow:  #6B8F71;
+  --accent-sakura: #F2C4C4;
+  --accent-kinari: #EDE9D8;
+
+  /* Typography */
+  --font-display: 'Zen Maru Gothic', sans-serif;
+  --font-body:    'Noto Sans JP', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* Spacing (8pt grid) */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   40px;
+
+  /* Radius */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-soft:   0 2px 12px rgba(61, 90, 68, 0.08);
+  --shadow-float:  0 4px 24px rgba(61, 90, 68, 0.14);
+  --shadow-hover:  0 4px 16px rgba(168, 197, 160, 0.4);
+}
+
+/* Main panel container — fixed right */
+.life-os-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 320px;
+  height: 100vh;
+  background: var(--shizen-white);
+  border-left: 1px solid var(--wa-sage);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  overflow-y: auto;
+  font-family: var(--font-body);
+  color: var(--mossy-shadow);
+  z-index: 1000;
+}
+
+/* Panel Header — title + action buttons */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--wa-sage);
+  margin-bottom: var(--space-sm);
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--nori-dark);
+  font-family: var(--font-display);
+  letter-spacing: -0.3px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+/* Icon Button (reusable) */
+.storage-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--wa-sage);
+  color: var(--mossy-shadow);
+  font-size: 16px;
+  cursor: pointer;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.storage-toggle-btn:hover {
+  background: var(--bamboo-mist);
+  border-color: var(--matcha-core);
+  color: var(--nori-dark);
+  box-shadow: var(--shadow-soft);
+}
+
+.storage-toggle-btn.active {
+  background: var(--matcha-core);
+  border-color: var(--matcha-core);
+  color: var(--shizen-white);
+  font-weight: 600;
+}
+
+/* Cards — consistent spacing and elevation */
+.life-os-card {
+  background: var(--shizen-white);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid var(--wa-sage);
+  box-shadow: var(--shadow-soft);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.life-os-card:hover {
+  border-color: var(--bamboo-mist);
+  box-shadow: var(--shadow-soft);
+  background: var(--kumo-cloud);
+}
+
+/* Section Header — clear content hierarchy */
+.life-os-section-title {
+  margin: 0;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--nori-dark);
+  font-family: var(--font-display);
+  text-transform: lowercase;
+  letter-spacing: 0.2px;
+  margin-bottom: var(--space-md);
+}
+
+/* Subsection Title — within cards */
+.life-os-subsection-title {
+  margin: 0 0 var(--space-md) 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--nori-dark);
+  font-family: var(--font-display);
+}
+
+/* Caption/Label — consistent styling */
+.life-os-caption,
+.life-os-label {
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--wa-sage);
+  font-family: var(--font-body);
+  text-transform: lowercase;
+  letter-spacing: 0.3px;
+}
+
+/* Data/Time Display — monospace */
+.life-os-data,
+.life-os-time {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--matcha-core);
+}
+
+/* PRIMARY BUTTON — main actions */
+.life-os-btn-primary {
+  background: var(--matcha-core);
+  color: var(--shizen-white);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: lowercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.life-os-btn-primary:hover {
+  background: #98B590;
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+
+.life-os-btn-primary:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: none;
+}
+
+.life-os-btn-primary:disabled {
+  background: var(--bamboo-mist);
+  color: var(--wa-sage);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* SECONDARY BUTTON — alternative actions */
+.life-os-btn-secondary {
+  background: transparent;
+  color: var(--matcha-core);
+  border: 1px solid var(--matcha-core);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: lowercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.life-os-btn-secondary:hover {
+  background: var(--bamboo-mist);
+  border-color: var(--bamboo-mist);
+  color: var(--nori-dark);
+}
+
+.life-os-btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* FULL-WIDTH BUTTON VARIANT */
+.life-os-btn-primary.full-width,
+.life-os-btn-secondary.full-width {
+  width: 100%;
+}
+
+/* Input Styling — date, text fields */
+input[type="date"],
+input[type="text"],
+input[type="email"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--wa-sage);
+  border-radius: var(--radius-sm);
+  background: var(--shizen-white);
+  color: var(--mossy-shadow);
+  font-family: var(--font-body);
+  font-size: 13px;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+input[type="date"]:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--matcha-core);
+  box-shadow: var(--shadow-soft);
+  background: var(--kumo-cloud);
+}
+
+/* Form Group Layout */
+.life-os-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.life-os-form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Override Design System components within this panel */
+.life-os-panel .ds-card {
+  background: var(--shizen-white);
+  border: 1px solid var(--wa-sage);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.life-os-panel .ds-card:hover {
+  background: var(--kumo-cloud);
+  border-color: var(--bamboo-mist);
+}
+
+/* Scrollbar — soft, minimal */
+.life-os-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.life-os-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.life-os-panel::-webkit-scrollbar-thumb {
+  background: var(--wa-sage);
+  border-radius: 3px;
+  transition: background 150ms ease-out;
+}
+
+.life-os-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--bamboo-mist);
+}
+
+/* ===== MOBILE TOUCH OPTIMIZATION ===== */
+
+/* Disable hover effects on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch */
+  .life-os-card:hover {
+    background: var(--shizen-white);
+    border-color: var(--wa-sage);
+  }
+
+  .storage-toggle-btn:hover {
+    background: transparent;
+    border-color: var(--wa-sage);
+    color: var(--mossy-shadow);
+    box-shadow: none;
+  }
+
+  .life-os-btn-primary:hover {
+    background: var(--matcha-core);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .life-os-btn-secondary:hover {
+    background: transparent;
+    border-color: var(--matcha-core);
+    color: var(--matcha-core);
+  }
+
+  /* Increase touch target sizes */
+  .life-os-btn-primary,
+  .life-os-btn-secondary {
+    padding: 12px 20px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .storage-toggle-btn {
+    padding: 10px 14px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Make inputs touch-friendly */
+  input[type="date"],
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  textarea,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    padding: 12px var(--space-md);
+    font-size: 16px;
+  }
+
+  /* Larger checkbox/radio targets */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* Calendar cells need larger touch targets */
+  .calendar-day-button {
+    min-height: 60px;
+    padding: 8px;
+  }
+
+  /* Month picker buttons */
+  .month-button,
+  .year-button {
+    min-height: 48px;
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+}
+
+/* Tablet & below (landscape phones, small tablets) */
+@media (max-width: 1024px) {
+  .life-os-panel {
+    width: 100%;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+    top: 0;
+    left: 0;
+    border-radius: 0;
+    border-left: none;
+  }
+}
+
+/* Mobile portrait (< 768px) */
+@media (max-width: 767px) {
+  .life-os-panel {
+    width: 100%;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+    top: 0;
+    left: 0;
+    border-radius: 0;
+    border-left: none;
+    padding: var(--space-md);
+  }
+
+  .panel-header {
+    padding-bottom: var(--space-md);
+  }
+
+  .panel-header h2 {
+    font-size: 18px;
+  }
+
+  /* Card styling for better readability */
+  .life-os-card {
+    padding: var(--space-md);
+  }
+
+  /* Buttons with full touch targets */
+  .life-os-btn-primary,
+  .life-os-btn-secondary {
+    padding: 14px 16px;
+    min-height: 48px;
+    width: 100%;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  /* Calendar optimizations */
+  .calendar-container {
+    font-size: 14px;
+  }
+
+  .calendar-day-button {
+    min-height: 64px;
+    padding: 10px 4px;
+    font-size: 12px;
+    border-radius: 12px;
+    gap: 2px;
+  }
+
+  .calendar-day-header {
+    min-height: 36px;
+    padding: 10px 4px;
+    font-size: 11px;
+  }
+
+  /* Calendar grid adjustment for mobile */
+  .calendar-grid {
+    gap: 6px;
+  }
+
+  /* Navigation buttons */
+  .calendar-nav-button {
+    padding: 10px 12px;
+    min-height: 44px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  /* Month/year picker */
+  .month-picker-grid {
+    gap: 8px;
+  }
+
+  .month-button,
+  .year-button {
+    min-height: 48px;
+    padding: 12px 8px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  /* Form inputs */
+  input[type="date"],
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  textarea {
+    min-height: 44px;
+    padding: 12px var(--space-md);
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  /* Labels */
+  .life-os-label {
+    font-size: 12px;
+  }
+
+  /* Task checklist adjustments */
+  .task-item {
+    padding: 12px var(--space-md);
+    min-height: 48px;
+  }
+
+  /* Checkbox spacing */
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    margin-top: 2px;
+  }
+}
+
+/* Small phone (< 480px) */
+@media (max-width: 479px) {
+  :root {
+    --space-md: 12px;
+    --space-lg: 16px;
+  }
+
+  .life-os-panel {
+    padding: var(--space-md);
+  }
+
+  .panel-header h2 {
+    font-size: 16px;
+  }
+
+  .life-os-btn-primary,
+  .life-os-btn-secondary {
+    padding: 12px 14px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .calendar-day-button {
+    min-height: 56px;
+    padding: 8px 2px;
+    font-size: 11px;
+  }
+
+  .life-os-card {
+    padding: var(--space-md);
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (max-height: 600px) {
+  .life-os-panel {
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .panel-header h2 {
+    font-size: 16px;
+  }
+
+  .life-os-card {
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
+}
+
+/* Active state feedback for touch */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    transition: all 100ms ease-out;
+  }
+
+  button:active {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+
+  /* Prevent selection on long press */
+  button,
+  input,
+  label {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

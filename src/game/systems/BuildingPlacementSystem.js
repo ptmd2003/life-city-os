@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { createBuilding } from './buildingFactory.js'
 import { isoToScreen, screenToIso } from './IsoHelper.js'
 import { WorldHealthSystem } from '../world/WorldHealthSystem.js'
+import logger from '../logger.js'
 import { useCityStore } from '../../stores/useCityStore.js'
 
 export function setupBuildingPlacement(scene) {
@@ -40,10 +41,7 @@ export function setupBuildingPlacement(scene) {
 }
 
 export function spawnBuildings(scene, cityLayout) {
-  console.group('🏗️  [spawnBuildings]')
-  console.log('   Spawning', cityLayout.length, 'buildings')
-  console.log('   First 3:', cityLayout.slice(0, 3).map(o => `${o.type}@(${o.x},${o.y})`))
-  console.groupEnd()
+  logger.debug(`Spawning ${cityLayout.length} buildings`)
 
   cityLayout.forEach(obj => {
 
@@ -83,10 +81,6 @@ export function spawnBuildings(scene, cityLayout) {
 
     scene.placedBuildings.push(buildingData)
 
-    // ✅ DISABLED: Hover buttons moved to sidebar TransformPanel
-    // building.on('pointerover', () => { })
-    // building.on('pointerout', () => { })
-
   })
 }
 
@@ -115,7 +109,7 @@ function handleRightClick(scene, pointer) {
   )
 
   if (buildingFromLayout?.locked) {
-    console.log(`🔒 [DUPLICATE] Cannot duplicate locked ${clickedBuilding.type}`)
+    logger.debug(`Cannot duplicate locked ${clickedBuilding.type}`)
     return
   }
 
@@ -136,7 +130,7 @@ function handleRightClick(scene, pointer) {
   // Emit event to spawn the sprite in scene
   scene.events.emit('spawn-building', duplicateData)
 
-  console.log(`📋 [DUPLICATE] Copied ${clickedBuilding.type} from (${clickedBuilding.tileX}, ${clickedBuilding.tileY}) → (${duplicateData.x}, ${duplicateData.y})`)
+  logger.debug(`Copied ${clickedBuilding.type} from (${clickedBuilding.tileX}, ${clickedBuilding.tileY}) to offset position`)
 }
 
 function handleGlobalPointerDown(scene, pointer) {
@@ -160,7 +154,7 @@ function handleGlobalPointerDown(scene, pointer) {
     )
     
     if (buildingFromLayout?.locked) {
-      console.log(`🔒 [LOCKED] Skipping interaction with locked ${b.type}`)
+      logger.debug(`Skipping interaction with locked ${b.type}`)
       return false
     }
     
@@ -169,7 +163,7 @@ function handleGlobalPointerDown(scene, pointer) {
 
   if (clickedBuilding) {
     // ✅ Prepare for drag (unlocked only)
-    console.log(`🖱️ [POINTERDOWN] Preparing drag for ${clickedBuilding.type}`)
+    logger.debug(`Preparing drag for ${clickedBuilding.type}`)
     scene.pointerDownPos = { x: pointer.worldX, y: pointer.worldY }
     scene.dragOffset.x = 0
     scene.dragOffset.y = 0
@@ -196,7 +190,7 @@ function handleGlobalPointerMove(scene, pointer) {
         // ✅ Start drag (first time threshold met)
         hideTransformHandles(scene)
         scene.isDragging = true
-        console.log(`✋ [DRAG-START] Dragging ${building.type}`)
+        logger.debug(`Dragging ${building.type}`)
       }
 
       // ✅ ALWAYS move while dragging (even after threshold)

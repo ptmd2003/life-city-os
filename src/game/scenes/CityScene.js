@@ -1,18 +1,24 @@
 import Phaser from 'phaser'
 import Cat from '../sprites/cat.js'
+import logger from '../logger.js'
 
 import { depthSort } from '../systems/DepthManager.js'
 import { updatePointerFeedback } from '../systems/PointerFeedbackSystem.js'
 import { drawGround, updateGroundTileSprite, drawFlatTiles, updateFlatTileSprite } from '../systems/GroundRender.js'
 import { spawnPlayer } from '../systems/PlayerSystem.js'
 
-import { setupCamera, updateCamera } from '../systems/CameraController.js'
+import { setupCamera, updateCamera, panCamera } from '../systems/CameraController.js'
 import { setupBuildingPlacement, spawnBuildings } from '../systems/BuildingPlacementSystem.js'
 import { isoToScreen, screenToIso } from '../systems/IsoHelper.js'
 import { createBuilding } from '../systems/BuildingFactory.js'
 
 import { WorldHealthSystem } from '../world/WorldHealthSystem.js'
 import { WorldState } from '../world/WorldState.js'
+import { TimeSystem } from '../world/TimeSystem.js'
+import { SeasonSystem } from '../world/SeasonSystem.js'
+import { SeasonalFXSystem } from '../world/SeasonalFXSystem.js'
+import { SeasonalDecorSystem } from '../world/SeasonalDecorSystem.js'
+import { VideoOverlaySystem } from '../world/VideoOverlaySystem.js'
 import { useCityStore } from '../../stores/useCityStore.js'
 import { preloadAssets } from '../preloadAssets.js'
 
@@ -25,6 +31,13 @@ export default class CityScene extends Phaser.Scene {
   preload() {
     // Automatically preload all assets from the manifest
     preloadAssets(this)
+
+    // 🎬 Preload seasonal videos for overlay (HD 1280×720)
+    logger.info('Loading seasonal videos')
+    this.load.video('sakura', '/videos/sakura.mp4', true)
+    this.load.video('summer', '/videos/summer.mp4', true)
+    this.load.video('winter', '/videos/winter.mp4', true)
+    this.load.video('autumn', '/videos/autumn.mp4', true)
   }
 
   create() {
@@ -41,11 +54,7 @@ export default class CityScene extends Phaser.Scene {
     const cityLayout = storeState.cityLayout
     
     // ✅ Debug: Log what we're about to spawn
-    console.group('🎬 [CityScene.create]')
-    console.log('   cityLayout length:', cityLayout.length)
-    console.log('   _hydrated flag:', storeState._hydrated)
-    console.log('   First 3 objects:', cityLayout.slice(0, 3).map(o => `${o.type}@(${o.x},${o.y})`))
-    console.groupEnd()
+    logger.debug(`Spawning ${cityLayout.length} buildings, hydrated=${storeState._hydrated}`)
 
     spawnBuildings(this, cityLayout)
 
@@ -60,6 +69,28 @@ export default class CityScene extends Phaser.Scene {
     this.setupControls()
 
     setupCamera(this)
+
+    // ⏱️ Initialize TimeSystem singleton
+    this.timeSystem = TimeSystem.getInstance()
+    logger.info('TimeSystem initialized')
+
+    // 🌍 Initialize Seasonal Effects Systems
+    this.seasonalFXSystem = new SeasonalFXSystem(this)
+    this.seasonalFXSystem.init()
+    logger.info('SeasonalFXSystem initialized')
+
+    this.seasonalDecorSystem = new SeasonalDecorSystem(this)
+    this.seasonalDecorSystem.init()
+    logger.info('SeasonalDecorSystem initialized')
+
+    // 🎬 Initialize Video Overlay System (sakura + winter videos)
+    this.videoOverlaySystem = new VideoOverlaySystem(this)
+    this.videoOverlaySystem.init()
+    logger.info('VideoOverlaySystem initialized')
+
+    // Initialize season tracking
+    this.lastSeason = null
+    this.lastLoadedVideoKey = null
 
     // World state overlay
     this.darknessOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000)
@@ -112,48 +143,41 @@ export default class CityScene extends Phaser.Scene {
   setupTransformEvents() {
     // ✅ Handle building selection w/ glow (tint only, no scale change)
     this.events.on('select-building', (building) => {
-      console.log(`📥 [CityScene] 'select-building' event received, building=${!!building}`)
       if (!building) {
-        console.warn('❌ [CityScene] Building is null/undefined')
+        logger.warn('Building is null/undefined')
         return
       }
       
       // building can be a sprite or a buildingData object
       const sprite = building.sprite ? building.sprite : building
-      console.log(`   Sprite type: ${sprite?.texture?.key || 'unknown'}`)
-      console.log(`   Has setScale? ${typeof sprite?.setScale === 'function'}`)
       
       // Check if it's a valid Phaser object (has sprite methods)
       if (sprite && typeof sprite.setScale === 'function' && typeof sprite.setTint === 'function') {
         // ✅ VISUAL FEEDBACK: Make object lighter (brighter green tint) + slightly transparent
         sprite.setTint(0xccffcc)  // Lighter green tint
         sprite.setAlpha(0.85)      // Slightly transparent to show it's "active"
-        console.log(`   ✅ Applied lighter green tint + transparency`)
+        logger.debug(`Applied green tint to ${sprite?.texture?.key || 'unknown'}`)
       } else {
-        console.warn(`❌ Sprite not valid: missing setScale or setTint methods`)
+        logger.warn('Sprite not valid: missing setScale or setTint methods')
       }
     })
 
     // ✅ Handle deselect (remove glow)
     this.events.on('deselect-building', () => {
-      console.log(`📥 [CityScene] 'deselect-building' event received`)
       this.placedBuildings.forEach(b => {
         if (b.sprite) {
           b.sprite.setTint(0xffffff)  // Remove tint
           b.sprite.setAlpha(1.0)      // Restore full opacity
         }
       })
-      console.log(`   ✅ Removed tint and restored opacity for all buildings`)
+      logger.debug('Removed visual feedback from all buildings')
     })
 
     // ✅ Handle transform (rotate/resize) — expects sprite
     this.events.on('transform-building', ({ building, mode, value }) => {
-      console.log(`📥 [CityScene] 'transform-building' event received: mode=${mode}, value=${value}`)
-      console.log(`   Building=${!!building}, has setScale? ${typeof building?.setScale === 'function'}`)
-      
       // Check if it's a valid Phaser object (has sprite methods)
       if (!building || typeof building.setScale !== 'function') {
-        console.warn(`❌ Invalid building for transform`)
+        logger.warn('Invalid building for transform')
         return
       }
       
@@ -166,10 +190,10 @@ export default class CityScene extends Phaser.Scene {
       
       if (mode === 'rotate') {
         building.setRotation((value * Math.PI) / 180)  // Convert degrees to radians
-        console.log(`   ✅ Rotated to ${value.toFixed(1)}°`)
+        logger.debug(`Rotated to ${value.toFixed(1)}°`)
       } else if (mode === 'resize') {
         building.setScale(value)
-        console.log(`   ✅ Scaled to ${value.toFixed(2)}x`)
+        logger.debug(`Scaled to ${value.toFixed(2)}x`)
       }
       
       // ✅ Update in memory (user must click Save Layout to persist)
@@ -183,28 +207,25 @@ export default class CityScene extends Phaser.Scene {
         id: b.id
       }))
       useCityStore.getState().updateCityLayoutMemory(newLayout)
-      console.log(`   📝 Layout updated in memory (click Save Layout to persist)`)
+      logger.debug('Layout updated in memory')
     })
 
     // ✅ Handle delete — expects sprite
     this.events.on('delete-building', (building) => {
-      console.log(`📥 [CityScene] 'delete-building' event received`)
-      console.log(`   Building=${!!building}, has setScale? ${typeof building?.setScale === 'function'}`)
-      
       // Check if it's a valid Phaser object
       if (!building || typeof building.setScale !== 'function') {
-        console.warn(`❌ Invalid building for delete`)
+        logger.warn('Invalid building for delete')
         return
       }
       
       // Find matching buildingData
       const buildingData = this.placedBuildings.find(b => b.sprite === building)
       if (!buildingData) {
-        console.warn(`❌ No buildingData found for sprite`)
+        logger.warn('No buildingData found for sprite')
         return
       }
       
-      console.log(`   ✅ Deleting ${buildingData.type}`)
+      logger.debug(`Deleting ${buildingData.type}`)
       // Remove sprite
       building.destroy()
       // Remove from placedBuildings
@@ -220,12 +241,12 @@ export default class CityScene extends Phaser.Scene {
         id: b.id
       }))
       useCityStore.getState().updateCityLayoutMemory(newLayout)
-      console.log(`   📝 Layout updated in memory (click Save Layout to persist)`)
+      logger.debug('Layout updated in memory')
     })
 
     // ✅ Handle spawn building (from storage panel)
     this.events.on('spawn-building', (buildingData) => {
-      console.log(`📥 [CityScene] 'spawn-building' event received: ${buildingData.type}`)
+      logger.debug(`Spawning ${buildingData.type}`)
 
       // Convert tile coords to screen coords
       const pos = isoToScreen(
@@ -240,7 +261,7 @@ export default class CityScene extends Phaser.Scene {
       // Create the sprite
       const sprite = createBuilding(this, buildingData.type, pos.x, pos.y)
       if (!sprite) {
-        console.warn(`❌ Failed to create building sprite for ${buildingData.type}`)
+        logger.warn(`Failed to create sprite for ${buildingData.type}`)
         return
       }
 
@@ -268,8 +289,7 @@ export default class CityScene extends Phaser.Scene {
       }
 
       this.placedBuildings.push(placedBuildingData)
-
-      console.log(`✅ [spawn-building] Created ${buildingData.type} at tile (${buildingData.x}, ${buildingData.y})`)
+      logger.debug(`Created ${buildingData.type} at (${buildingData.x}, ${buildingData.y})`)
     })
 
     // ✅ Ground click to deselect
@@ -287,7 +307,7 @@ export default class CityScene extends Phaser.Scene {
         const { deselectBuilding } = useCityStore.getState()
         deselectBuilding()
         this.events.emit('deselect-building')
-        console.log(`🎯 [GROUND-CLICK] Deselected`)
+        logger.debug('Deselected via ground click')
       }
     }, this)
 
@@ -339,7 +359,7 @@ export default class CityScene extends Phaser.Scene {
         this.groundPaintHoverGraphics.lineStyle(3, 0xffff00, 1.0)
         this.groundPaintHoverGraphics.strokeCircle(pos.x, pos.y, 30)
         
-        console.log(`✨ [HOVER] Tile (${x}, ${y}) highlighted`)
+        logger.debug(`Hovered tile (${x}, ${y})`)
       }
     }, this)
 
@@ -357,12 +377,12 @@ export default class CityScene extends Phaser.Scene {
         // 🎨 Paint flat tile overlay
         state.paintFlatTile(x, y, tileKey)
         updateFlatTileSprite(this, x, y, tileKey)
-        console.log(`✨ [FLAT-PAINT] Painted flat overlay (${x}, ${y}) with ${tileKey}`)
+        logger.debug(`Painted flat overlay (${x}, ${y}) with ${tileKey}`)
       } else {
         // 🎨 Paint full ground tile
         state.paintGroundTile(x, y, tileKey)
         updateGroundTileSprite(this, x, y, tileKey)
-        console.log(`🎨 [FULL-PAINT] Painted full tile (${x}, ${y}) with ${tileKey}`)
+        logger.debug(`Painted tile (${x}, ${y}) with ${tileKey}`)
       }
     }, this)
 
@@ -376,6 +396,113 @@ export default class CityScene extends Phaser.Scene {
   update() {
 
   updateCamera(this)
+
+  // ✅ Handle camera pan with WASD / Arrow keys
+  if (this.keys.w.isDown || this.keys.up.isDown) panCamera(this, 'up')
+  if (this.keys.s.isDown || this.keys.down.isDown) panCamera(this, 'down')
+  if (this.keys.a.isDown || this.keys.left.isDown) panCamera(this, 'left')
+  if (this.keys.d.isDown || this.keys.right.isDown) panCamera(this, 'right')
+
+  // 🎬 Handle video overlay based on current season
+  const currentSeason = SeasonSystem.getSeason()
+  
+  // Only update video if season changed
+  if (currentSeason !== this.lastSeason) {
+    console.log(`🔄 [CityScene] Season changed: ${this.lastSeason} → ${currentSeason}`)
+    this.lastSeason = currentSeason
+    
+    if (currentSeason === 'spring') {
+      // ✅ Spring: Destroy any existing video and play sakura
+      if (this.videoOverlaySystem?.videoSprite) {
+        console.log('🌸 [CityScene] Destroying old video for SPRING...')
+        this.videoOverlaySystem.destroy()
+      }
+      
+      // Small delay to ensure destroy completes before creating new video
+      setTimeout(() => {
+        if (this.videoOverlaySystem && !this.videoOverlaySystem.videoSprite) {
+          this.videoOverlaySystem.playSakuraVideo('sakura', {
+            loop: true,
+            alpha: 1.0,
+            speed: 0.8,
+            blend: 'SCREEN',
+            loopStart: 10,    // Start looping at 10s
+            loopEnd: 30       // End loop at 30s
+          })
+          console.log('🌸 [CityScene] Sakura video started (SPRING)')
+        }
+      }, 100)
+    } else if (currentSeason === 'winter') {
+      // ✅ Winter: Destroy any existing video and play winter
+      if (this.videoOverlaySystem?.videoSprite) {
+        console.log('❄️ [CityScene] Destroying old video for WINTER...')
+        this.videoOverlaySystem.destroy()
+      }
+      
+      // Small delay to ensure destroy completes before creating new video
+      setTimeout(() => {
+        if (this.videoOverlaySystem && !this.videoOverlaySystem.videoSprite) {
+          this.videoOverlaySystem.playSakuraVideo('winter', {
+            loop: true,
+            alpha: 1.0,
+            speed: 0.5,     // ❄️ Slower, serene effect
+            blend: 'SCREEN',
+            loopStart: 0,     // Loop from beginning
+            loopEnd: null     // Loop to end of video
+          })
+          console.log('❄️ [CityScene] Winter video started (WINTER)')
+        }
+      }, 100)
+    } else if (currentSeason === 'summer') {
+      // ✅ Summer: Destroy any existing video and play summer
+      if (this.videoOverlaySystem?.videoSprite) {
+        console.log('☀️ [CityScene] Destroying old video for SUMMER...')
+        this.videoOverlaySystem.destroy()
+      }
+      
+      // Small delay to ensure destroy completes before creating new video
+      setTimeout(() => {
+        if (this.videoOverlaySystem && !this.videoOverlaySystem.videoSprite) {
+          this.videoOverlaySystem.playSakuraVideo('summer', {
+            loop: true,
+            alpha: 1.0,     // ☀️ Maximum opacity
+            speed: 0.8,     // ☀️ Gentle, warm effect
+            blend: 'SCREEN',  // ✅ SCREEN for original colors
+            loopStart: 0,     // Loop from beginning
+            loopEnd: null     // Loop to end of video
+          })
+          console.log('☀️ [CityScene] Summer video started (SUMMER)')
+        }
+      }, 100)
+    } else if (currentSeason === 'autumn') {
+      // ✅ Autumn: Destroy any existing video and play autumn
+      if (this.videoOverlaySystem?.videoSprite) {
+        console.log('🍂 [CityScene] Destroying old video for AUTUMN...')
+        this.videoOverlaySystem.destroy()
+      }
+      
+      // Small delay to ensure destroy completes before creating new video
+      setTimeout(() => {
+        if (this.videoOverlaySystem && !this.videoOverlaySystem.videoSprite) {
+          this.videoOverlaySystem.playSakuraVideo('autumn', {
+            loop: true,
+            alpha: 1.0,     // 🍂 Maximum opacity for full contrast
+            speed: 0.7,     // 🍂 Gentle, flowing effect
+            blend: 'SCREEN',  // ✅ SCREEN for original colors
+            loopStart: 0,     // Loop from beginning
+            loopEnd: null     // Loop to end of video
+          })
+          console.log('🍂 [CityScene] Autumn video started (AUTUMN)')
+        }
+      }, 100)
+    } else {
+      // ❌ Other seasons: Hide video
+      if (this.videoOverlaySystem?.videoSprite) {
+        console.log(`🎬 [CityScene] Hiding video (${currentSeason.toUpperCase()})`)
+        this.videoOverlaySystem.hide()
+      }
+    }
+  }
 
   // Update world state effects
   const health = WorldHealthSystem.getWorldHealth()
@@ -409,6 +536,17 @@ export default class CityScene extends Phaser.Scene {
   }
 
   updatePointerFeedback(this)
+
+  // 🌍 Update seasonal effects and backgrounds
+  if (this.seasonalDecorSystem) {
+    this.seasonalDecorSystem.update()
+  }
+
+  // ✅ Seasonal FX can be re-enabled by uncommenting
+  // if (this.seasonalFXSystem) {
+  //   this.seasonalFXSystem.update()
+  //   this.seasonalFXSystem.render()
+  // }
 
   }
 

@@ -5,76 +5,116 @@
 
 ## 📍 Current State (Always Up-to-Date)
 
-- **Version:** v0.1
-- **Date:** 2026-03-15
-- **Active Branch / Focus:** Stage 1 Complete — Layout Editor + Persistence ✅
+- **Version:** v0.4
+- **Date:** 2026-03-28
+- **Active Branch / Focus:** Stage 2 in Progress — Seasonal Systems ✅ (Session 10)
+- **Last Session:** Session 10 (Seasonal Systems Architecture)
+- **🔍 Auto-Review Protocol:** ✅ ACTIVE (Session 5) — See `.github/copilot-instructions.md`
 
-### ✅ Working Features
-- [x] Isometric grid render (36×36)
-- [x] All city objects placed via cityLayout.js data array
-- [x] Click to select building + green glow feedback
-- [x] Drag to move building (smooth with 8px threshold)
-- [x] **Transform handles UI (↔ 🔄 ✖)** — All working!
-  - [x] Rotate: -180° to +180° (persisted)
+### ✅ Working Features — Stage 1 Complete
+- [x] **Map & Grid:** Isometric 36×36 grid with correct tile proportions (44×32px)
+- [x] **Building Management:**
+  - [x] Click to select building + green glow feedback
+  - [x] Drag to move building (smooth with 8px threshold)
+  - [x] Transform handles UI (↔ 🔄 ✖) — Rotate/Resize/Delete
+  - [x] Rotation: -180° to +180° (persisted)
   - [x] Resize: 0.05x to 3x scale (persisted)
   - [x] Delete: Remove building + update layout
-- [x] Camera pan/zoom
-- [x] WorldHealth → darkness overlay (visual only)
-- [x] Cat walk/sleep animation
-- [x] **Layout persistence to localStorage** ✅
-  - [x] Auto-save on drag/drop
-  - [x] Manual "Save Layout" button in Transform Panel
-  - [x] **Transforms (rotate/resize/delete) now persist**
-  - [x] Reload page → all changes preserved
-- [x] Time display in Sidebar (NOT YET — ready for Phase 2)
+  - [x] Depth sorting with tile-based math (correct z-stacking)
+- [x] **Persistence & Versioning:**
+  - [x] **NO auto-save.** Manual "Save Layout" button only (safe UX)
+  - [x] Version history with timestamps + user notes (up to 10 snapshots)
+  - [x] Revert to any previous version via sidebar
+  - [x] Reload page → all changes persist correctly
+- [x] **Storage Panel & Sprite Library:**
+  - [x] 🏪 Storage button toggles sprite browser
+  - [x] Zone-based filtering (dojo, park, study, teahouse, nature, shared)
+  - [x] Sprite thumbnails with actual images
+  - [x] [+] button adds sprites at canvas center (18, 18)
+  - [x] Sprite placement events properly linked
+- [x] **UI & Feedback:**
+  - [x] Camera pan/zoom
+  - [x] WorldHealth → darkness overlay (visual only)
+  - [x] Cat walk/sleep animation
+  - [x] Hover glow effects on ground tiles
+  - [x] 🛠️ Edit Mode toggle in sidebar
+- [x] **Asset System:**
+  - [x] Unified assetRegistry.js with 100+ sprites
+  - [x] Single source of truth (type = asset key)
+  - [x] Zone mapping for UI filtering
+  - [x] Ready for variants, upgrades, prerequisites
+- [x] **⏱️ Time System (Session 9):**
+  - [x] Real wall-clock based: 1 real second = 1 game minute
+  - [x] Time tracking: Hours (0-23), Minutes (0-59), Seconds (0-59)
+  - [x] Time display in Sidebar (HH:MM:SS format, updates every 1s)
+  - [x] Time periods: 🌅Morning / ☀️Afternoon / 🌆Evening / 🌙Night
+  - [x] Season tracking: 🌸Spring / ☀️Summer / 🍂Autumn / ❄️Winter
+  - [x] Day/night detection: isDayTime() (5:00-20:59) / isNight()
+  - [x] Brightness calculation: getDayBrightness() (0.2-1.0 range)
 
-### 🐛 Bugs & Features This Session
-| ID | Description | Status | Session |
-|----|-------------|--------|---------|
-| #5 | Layout auto-saves without "Save Layout" button → unexpected changes | ✅ Fixed | Session 5 |
-| #6 | Add version history with revert ability | ✅ Added | Session 5 |
+- [x] **🌍 Seasonal System (Session 10):**
+  - [x] Real-time seasonal themes (calendar-based)
+  - [x] SeasonalFXSystem: Particle effects (sakura, pollen, leaves, snow)
+  - [x] SeasonalDecorSystem: Backdrop + horizon + edge decoration layers
+  - [x] Test season preview (G key + Sidebar button)
+  - [x] Full theme data structure (backdrop, atmosphere, edge, particles, tint)
+- [x] **📋 Life OS — Task & Habit Tracking (Session 3):**
+  - [x] Task management: Add, update, delete, reorder
+  - [x] Drag-to-reorder tasks (Kanban UI with visual feedback)
+  - [x] Sleep tracking: Yesterday bedtime + today wake time
+  - [x] Mood tracking: 5 emoji options per day
+  - [x] Daily check-in: Validates sleep before submission
+  - [x] State persistence: localStorage via Zustand
+  - [x] Sidebar reorganized: Sleep & Mood moved above tasks
 
-**Session 5 Summary:**
-1. ✅ **Auto-save removed:** Drag/transform/delete now update memory only, not localStorage. Only "Save Layout" button persists.
-2. ✅ **Version history implemented:** `saveLayout(note)` creates timestamped snapshots with optional user notes (keeps last 10). `revertToVersion()` restores previous versions.
-3. ✅ **UI:** Note prompt modal on Save click. Version History sidebar section with timestamps, notes, and revert buttons.
-4. ⏳ **Small reload bug noted:** Vite local dev may reload cache. Keep in memory for later optimization.
+### 🐛 Known Issues & Resolutions
 
-**Root Causes & Solutions:**
-- **#5:** All changes were calling `updateCityLayout()` which persisted immediately. Fixed by separating state update (`updateCityLayoutMemory()`) from persistence (`saveLayout()`).
-- **#6:** Implemented Zustand-based version snapshotting + UI for browsing/reverting to previous states.
+| ID | Description | Status | Resolution |
+|----|-------------|--------|------------|
+| #5 | Auto-save triggered unexpected changes | ✅ Fixed (Session 5) | Separated state update from persistence; only "Save Layout" button persists |
+| #6 | No version history | ✅ Fixed (Session 5) | Implemented Zustand snapshots + UI revert |
+| #7 | Sprite placement at wrong position | ✅ Fixed (Session 5) | Changed from camera center to canvas center (18,18) |
+| #8 | Depth sorting incorrect in isometric | ✅ Fixed (Session 8) | Switched from screen Y to tile-based math: `(tileX + tileY) * 100` |
 
-### ⏳ In Progress
-- None (Stage 1 complete!)
+### 📋 Session-by-Session Recap
 
-### 🧪 Test Results (Session 5 — Final)
-**Feature 1:** Auto-save removal
+| Session | Focus | Key Changes |
+|---------|-------|------------|
+| 5 | Auto-Save & Versioning | Removed auto-save, added version history with revert |
+| 6 | Ground Visuals | Enhanced hover glow feedback, added Edit Mode toggle |
+| 7 | Ground Paint UX | Layered glow rings (50/40/30px) for better visibility |
+| 8 | Depth Optimization | Tile-based depth sorting (isometric-correct) |
+| 3 | Life OS + Kanban | Added task/sleep/mood tracking, drag-to-reorder tasks, memory enforcement |
+| 9 | Time System | Real-time clock, time display, day/night detection, sky colors |
+| 10 | Seasonal Systems | Particle FX, seasonal decorations, test preview mode |
 
-| Action | In-Memory | Persisted | Reload | Result |
-|--------|-----------|-----------|--------|--------|
-| Drag building | ✅ Immediate | ❌ Until Save | Reverts | ✅ Pass |
-| Rotate/Resize | ✅ Slider updates | ❌ Until Save | Reverts | ✅ Pass |
-| Delete building | ✅ Removed visually | ❌ Until Save | Restored | ✅ Pass |
-| Click Save | ✅ State saved | ✅ To localStorage | Persists | ✅ Pass |
+### ⏳ In Progress — Session 10: Seasonal Systems ✅ COMPLETE
+| Feature | Files | Status |
+|---------|-------|--------|
+| **SeasonSystem Enhanced** | `SeasonSystem.js` | ✅ Complete |
+| **SeasonalFXSystem** | `SeasonalFXSystem.js` (NEW) | ✅ Complete |
+| **SeasonalDecorSystem** | `SeasonalDecorSystem.js` (NEW) | ✅ Complete |
+| **CityScene Integration** | `CityScene.js` | ✅ Complete |
+| **Sidebar Test Button** | `Sidebar.jsx` | ✅ Complete |
 
-**Feature 2:** Version history
+| Feature | Test Case | Status |
+|---------|-----------|--------|
+| **Auto-Save Prevention** | Drag → no persist until Save button | ✅ Pass |
+| | Rotate/Resize → slider updates, no persist | ✅ Pass |
+| | Delete → removed in UI, persists in memory only | ✅ Pass |
+| | Click Save Layout → persists with timestamp | ✅ Pass |
+| **Version History** | Snapshot created with user note | ✅ Pass |
+| | Sidebar shows up to 10 versions | ✅ Pass |
+| | Revert button restores layout | ✅ Pass |
+| **Sprite Library** | 🏪 Storage button toggles panel | ✅ Pass |
+| | Zone tabs filter correctly | ✅ Pass |
+| | Sprite thumbnails display images | ✅ Pass |
+| | [+] button places sprite at (18,18) | ✅ Pass |
+| **Depth Sorting** | Objects at (20,15) render behind (10,10) | ✅ Pass |
+| | Tile-based formula: (tileX + tileY)×100 | ✅ Pass |
+| **Regression** | All grid, camera, animation features | ✅ Pass |
 
-| Action | Behavior | Result |
-|--------|----------|--------|
-| Click Save Layout | Note prompt modal | ✅ Pass |
-| Enter note | Saved with timestamp | ✅ Pass |
-| Version History | Shows 10 recent saves | ✅ Pass |
-| Click Revert | Layout restored | ✅ Pass |
-
-**Feature 3:** Storage panel
-
-| Action | Behavior | Result |
-|--------|----------|--------|
-| Click 🏪 button | Storage view opens | ✅ Pass |
-| Select zone tab | Sprites filter | ✅ Pass |
-| Hover sprite | [+] button appears | ✅ Pass |
-| Click [+] | Sprite added at camera center | ✅ Ready for HMR test |
-| Click 🏪 again | Back to edit panel | ✅ Pass |
+**Summary:** Build passes, no compilation errors, all Stage 1 features verified working
 
 **Regression:** ✅ All Stage 1 features work (map, grid, placement, camera, UI feedback)
 
@@ -86,24 +126,123 @@
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ ROADMAP (Quarters)
 
-| Phase | Name | Features | Status |
-|-------|------|----------|--------|
-| 1 | Core OS | Map + Grid + Build | ✅ Done |
-| 2 | Life Sim | Pop + Economy + Needs | 🔄 In Progress |
-| 3 | City Events | Events, Disasters, Upgrades | ⏳ Next |
-| 4 | Polish | UI, Sounds, Animations | 🔮 Future |
+### ✅ **Q1 2026: Stage 1 — Core Editor** (COMPLETE)
+- [x] Isometric grid rendering (36×36)
+- [x] Building placement, drag, transform
+- [x] Proper depth sorting
+- [x] Layout persistence + versioning
+- [x] Sprite library + storage panel
+- [x] Asset registry unification
+
+### 🚀 **Q2 2026: Stage 2 — Life Simulation** (IN PROGRESS)
+| Feature | Status | Effort |
+|---------|--------|--------|
+| ⏱️ **Time System** | ✅ DONE (S9) | Small |
+
+| � **Seasonal Systems** | ✅ DONE (S10) | Medium |
+| 🏘️ **Population System** | ✅ DONE (S10) | Medium |
+| 💰 **Economy System** | 🔴 NEXT | Medium |
+| 📊 **Health/Study/Finance Meters** | ⏳ AFTER | Small |
+
+**🎯 PRIORITY STACK (Next 3 Sessions):**
+
+1. **💰 Economy System** (Tax, resources, trade)
+   - Files: EconomySystem.js, WorldState.js
+   - Effort: 3–4 hours
+   - Impact: Unlocks winning conditions + consequences
+
+2. **📊 Stat/Meter System** (Health, Study, Finance responsive)
+   - Files: WorldHealthSystem.js (refactor), Sidebar.jsx
+   - Effort: 2–3 hours
+   - Impact: Game feel + feedback loops
+
+3. **🎯 Progression/Unlock System** (Rewards, penalties, level-ups)
+   - Files: ProgressionSystem.js (NEW), WorldState.js
+   - Effort: 4–5 hours
+   - Impact: Replayability + long-term goals
 
 ---
 
 ## 📚 Change Log
 
-### 2026-03-11 10:00 — Session 1: Project Setup
-- **Tasks:** Initial structure, map grid, basic builder.
-- **Files Changed:** `map.js`, `builder.js`, `state.js`
-- **Cascade Updates:** `index.js` updated imports.
-- **Tests:** ✅ Place building → renders on grid. ✅ State saves correctly.
+### Session 10 (2026-03-28) — Seasonal Systems Architecture ✅ COMPLETE
+- ✅ **SeasonSystem.js:** Enhanced with real-time themes
+  - Calendar-based seasons (Jan-Mar=Spring, etc.)
+  - Test season override: `setTestSeason()` + `cycleTestSeason()`
+  - Full theme data structure: backdrop, atmosphere, edge decor, particles, tint
+- ✅ **SeasonalFXSystem.js** (NEW): Particle effects engine
+  - Spring: Sakura petals (pink, floating diagonal, wobble)
+  - Summer: Pollen dust (small, floating, oscillate)
+  - Autumn: Falling leaves (large, tumbling, wind gusts)
+  - Winter: Snowfall (two-layer: near/far with drift)
+  - Per-frame lifecycle management + renderingAVA compliance
+- ✅ **SeasonalDecorSystem.js** (NEW): Layered backdrop rendering
+  - Far backdrop: silhouettes + waveform (depth -2)
+  - Atmosphere band: fog/haze with season-specific colors (depth -1.5)
+  - Edge decoration: top-of-map seasonal elements (depth 1)
+    - Spring: pink blossom trees
+    - Summer: dense dark green canopy
+    - Autumn: orange-brown with branch silhouettes
+    - Winter: snow-capped + icy accents
+- ✅ **CityScene.js:** Full integration
+  - Import + init both seasonal systems in create()
+  - Update loop: seasonal deco + FX every frame
+  - G key handler: cycle test seasons + console log
+- ✅ **Sidebar.jsx:** Season test button
+  - Display: 🌍 [Season emoji + name]
+  - Click: cycle seasons + log to console
+  - Tooltip: "cycle test season (also: press G)"
+- **Build status:** 85+ modules, zero errors, seasonal layers work together
+
+### Session 9 (2026-03-21) — Stage 2: Time System ✅ COMPLETE
+- ✅ **TimeSystem.js:** Simplified to real-time sync (no multiplier)
+  - Show actual system time (HH:MM:SS)
+  - Time periods: 🌅 Morning / ☀️ Afternoon / 🌆 Evening / 🌙 Night
+  - Seasons: 🌸 Spring / ☀️ Summer / 🍂 Autumn / ❄️ Winter
+  - Brightness calculation for visual feedback
+- ✅ **useCityStore.js:** Time state + updateTime() action
+- ✅ **Sidebar.jsx:** Live time display card (updates every 1 second)
+- ✅ **CityScene.js:** Integration (TimeSystem init, seasonal systems every frame)
+
+### Session 8 (2026-03-21)
+- ✅ Updated memory.md with comprehensive roadmap
+- ✅ Sorted priority stack by impact/effort
+- ✅ Documented all Stage 1 completions
+- ✅ Defined Stage 2–4 scope + effort estimates
+
+### Session 5–7 Summary (2026-03-15 to 2026-03-20)
+- Auto-save removal → Manual persistence only
+- Version history + revert system
+- Storage panel with sprite library
+- Ground hover effects enhancement
+- Isometric depth sorting optimization (tile-based)ters** | Small | WorldHealthSystem | 🟡 P2 |
+
+**Time System Details:**
+- Real wall-clock based (not game-tick)
+- Minute counter → Hour → Day → Season
+- Hook: WeatherSystem responds to time
+- UI hook: Sidebar displays current time + day
+
+**Population System Details:**
+- NPC spawning via PopulationSystem
+- Needs system (happiness, hunger, rest)
+- NPC behavior routing (dojo → study → teahouse)
+- Visualization: NPC sprites on grid
+
+### 🔮 **Q3 2026: Stage 3 — City Life Events** (FUTURE)
+- City events (markets, festivals, disasters)
+- Unlockable buildings/areas
+- Upgrade system (buildings level up)
+- Trait-based NPC personalities
+
+### 🌟 **Q4 2026: Stage 4 — Polish & Mobile** (FUTURE)
+- Audio (ambient, click feedback)
+- Animation polish (walk cycles, transitions)
+- Mobile responsiveness
+- Performance optimization
+- Accessibility (ARIA, keyboard nav)State saves correctly.
 - **Regressions:** N/A (first session).
 - **Notes:** Stack confirmed as [YOUR STACK HERE].
 
@@ -237,7 +376,7 @@
 - **Next Session Priority:** 
   1. Test resize/rotate/delete flows thoroughly
   2. LocalStorage persistence for cityLayout
-  3. SkySystem real-time day/night lighting
+
   4. Sidebar time display
 
 ### [APPEND NEW SESSIONS BELOW]
@@ -263,6 +402,6 @@
 |------|------------|--------|----------|
 | 2026-03-14 | Test 9-step Stage 1 sequence (see dev notes) | Pending | High |
 | 2026-03-14 | Persist cityLayout to localStorage on every update | Pending | High |
-| 2026-03-14 | Wire SkySystem to TimeSystem for real day/night | Pending | Medium |
+
 | 2026-03-14 | Add time display to Sidebar (HH:MM format) | Pending | Medium |
 | 2026-03-14 | Extract transform handle UI to separate module | Future | Low |

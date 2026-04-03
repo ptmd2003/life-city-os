@@ -7,12 +7,13 @@
  * Adding a new sprite:
  *  1. Add file to src/assets/zone/type/
  *  2. Run: npm run generate-assets
- *  3. Add entry below with correct key and dimensions
+ *  3. Add entry below with correct key and dimensions (or auto-populated with defaults)
  *  4. Done!
  */
 
 import Dojo from './dojo.js'
 import Sakura from './sakura.js'
+import { assetManifest } from '../preloadAssets.js'
 
 /**
  * Core registry: maps asset key → complete metadata
@@ -246,52 +247,6 @@ export const ASSET_REGISTRY = {
   },
 
   // ═══════════════════════════════════════════
-  // STUDY ZONE
-  // ═══════════════════════════════════════════
-  'bonsai': {
-    dimensions: { w: 1, h: 1 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Bonsai',
-  },
-  'bookshelf': {
-    dimensions: { w: 2, h: 3 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Bookshelf',
-  },
-  'incense-holder': {
-    dimensions: { w: 1, h: 1 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Incense Holder',
-  },
-  'paper-lantern': {
-    dimensions: { w: 1, h: 1 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Paper Lantern',
-  },
-  'piano': {
-    dimensions: { w: 2, h: 2 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Piano',
-  },
-  'study-desk': {
-    dimensions: { w: 2, h: 1 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Study Desk',
-  },
-  'zabuton': {
-    dimensions: { w: 1, h: 1 },
-    spriteClass: null,
-    zone: 'study',
-    label: 'Zabuton (Floor Cushion)',
-  },
-
-  // ═══════════════════════════════════════════
   // TEAHOUSE ZONE
   // ═══════════════════════════════════════════
   'teahouse-main': {
@@ -412,6 +367,42 @@ for (let i = 0; i <= 114; i++) {
     label: `Tile ${i}`,
   }
 }
+
+// Auto-populate missing assets from manifest
+// ✅ Any asset in assetManifest that's not in ASSET_REGISTRY gets a default entry
+assetManifest.forEach(assetPath => {
+  const fileName = assetPath.split('/').pop().replace('.png', '')
+  const pathParts = assetPath.split('/')
+  const zone = pathParts[2] || 'other' // Extract zone from path: src/assets/[ZONE]/...
+  
+  if (!ASSET_REGISTRY[fileName]) {
+    // Create a human-readable label from the filename
+    const label = fileName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+    
+    ASSET_REGISTRY[fileName] = {
+      dimensions: { w: 1, h: 1 }, // Default 1x1; can be overridden manually
+      spriteClass: null,
+      zone,
+      label,
+    }
+  }
+})
+
+// ✅ VALIDATION: Remove any registry entries that don't exist in manifest
+// This prevents UI from trying to load deleted assets
+const validKeys = new Set(
+  assetManifest.map(path => path.split('/').pop().replace('.png', ''))
+)
+
+Object.keys(ASSET_REGISTRY).forEach(key => {
+  if (!validKeys.has(key)) {
+    console.warn(`⚠️  Removing deleted asset from registry: ${key}`)
+    delete ASSET_REGISTRY[key]
+  }
+})
 
 /**
  * Get dimensions (in tiles) for an asset key

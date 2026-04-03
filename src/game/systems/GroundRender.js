@@ -1,5 +1,6 @@
 import { isoToScreen } from './IsoHelper.js'
 import { useCityStore } from '../../stores/useCityStore.js'
+import logger from '../logger.js'
 
 export function drawGround(scene) {
 
@@ -36,6 +37,7 @@ export function drawGround(scene) {
     }
   }
 
+  console.log(`✅ Ground drawn: ${scene.cols} × ${scene.rows} = ${scene.groundTiles.length} tiles`)
 }
 
 /**
@@ -50,7 +52,7 @@ export function updateGroundTileSprite(scene, x, y, tileKey) {
 
   const tile = scene.groundTiles[tileIndex]
   tile.setTexture(tileKey)
-  console.log(`🎨 [updateGroundTileSprite] Updated FULL tile (${x}, ${y}) to ${tileKey}`)
+  logger.debug(`Ground tile updated`, { x, y, tileKey })
 }
 
 /**

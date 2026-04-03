@@ -1,8 +1,11 @@
+import logger from '../logger.js'
+
 export function updatePointerFeedback(scene) {
 
   const pointer = scene.input.activePointer
   let hovered = null
   let prevHovered = scene.prevHoveredBuilding
+  let hoveredBuildingData = null
 
   if (scene.placedBuildings) {
     hovered = scene.placedBuildings.find(b => {
@@ -33,20 +36,21 @@ export function updatePointerFeedback(scene) {
 
   if (hovered) {
     if (prevHovered !== hovered && hovered.type) {
-      console.log(`👆 [HOVER] ${hovered.type} at tile (${hovered.tileX}, ${hovered.tileY}) - cursor ready to interact`)
+      logger.debug(`Hovering ${hovered.type}`)
       scene.prevHoveredBuilding = hovered
     }
 
     scene.input.setDefaultCursor('pointer')
 
-    if (!hovered.visualFeedback) {
+    // Skip hover feedback for video overlays
+    if (!hovered.sprite?._isVideoOverlay && !hovered.visualFeedback) {
       hovered.sprite.setAlpha(0.85)
       hovered.visualFeedback = true
     }
 
   } else {
     if (prevHovered) {
-      console.log(`👁️ [UNHOVER] Left ${prevHovered.type}`)
+      logger.debug(`Unhovered ${prevHovered.type}`)
       scene.prevHoveredBuilding = null
     }
 

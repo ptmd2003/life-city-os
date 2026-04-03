@@ -8,56 +8,47 @@ export const assetManifest = [
   "src/assets/characters/cat-walk-2.png",
   "src/assets/characters/cat-walk-3.png",
   "src/assets/characters/cat-walk-4.png",
-  "src/assets/dojo/buildings/dojo-lv1.png",
-  "src/assets/dojo/buildings/dojo2-lv1.png",
-  "src/assets/dojo/objects/bamboo-grove.png",
-  "src/assets/dojo/objects/hanging-banner.png",
-  "src/assets/dojo/objects/onigiri-stand.png",
-  "src/assets/dojo/objects/training-lantern.png",
-  "src/assets/dojo/objects/training-yard.png",
-  "src/assets/dojo/objects/weapon-rack.png",
-  "src/assets/dojo/objects/zen-garden.png",
-  "src/assets/nature/bush-1.png",
-  "src/assets/nature/sakura-bloom-1.png",
-  "src/assets/nature/sakura-bloom-2.png",
-  "src/assets/nature/sakura-dying.png",
-  "src/assets/nature/sakura-small.png",
-  "src/assets/nature/sakura-style1.png",
-  "src/assets/park/objects/bamboo-fence.png",
-  "src/assets/park/objects/bird-feeding-station.png",
-  "src/assets/park/objects/flower-bed.png",
-  "src/assets/park/objects/koi-pond.png",
-  "src/assets/park/objects/paper-lantern-post.png",
-  "src/assets/park/objects/red-torii-gate.png",
-  "src/assets/park/objects/stone-lantern.png",
-  "src/assets/park/objects/vending-machine.png",
-  "src/assets/park/objects/wooden-bench.png",
-  "src/assets/park/tiles/grass-tile.png",
-  "src/assets/park/tiles/stone-path-corner.png",
-  "src/assets/park/tiles/stone-path-straight.png",
-  "src/assets/park/tiles/stone-path-tjunction.png",
-  "src/assets/shared/effects/level-up-effect.png",
-  "src/assets/shared/effects/xp-orb.png",
-  "src/assets/shared/objects/mailbox.png",
-  "src/assets/shared/objects/street-lamp.png",
-  "src/assets/shared/objects/woodcrate.png",
-  "src/assets/shared/objects/wooden-bridge.png",
-  "src/assets/study/objects/bonsai.png",
-  "src/assets/study/objects/bookshelf.png",
-  "src/assets/study/objects/incense-holder.png",
-  "src/assets/study/objects/paper-lantern.png",
-  "src/assets/study/objects/piano.png",
-  "src/assets/study/objects/study-desk.png",
-  "src/assets/study/objects/zabuton.png",
-  "src/assets/teahouse/buildings/teahouse-main.png",
-  "src/assets/teahouse/objects/outdoor-terrace.png",
-  "src/assets/teahouse/objects/serving-cart (1).png",
-  "src/assets/teahouse/objects/stepping-stones.png",
-  "src/assets/teahouse/objects/tea-counter.png",
-  "src/assets/teahouse/objects/tea-table.png",
-  "src/assets/teahouse/objects/water-basin.png",
-  "src/assets/teahouse/objects/wind-chime.png",
-  "src/assets/teahouse/objects/wisteria-trellis.png",
+  "src/assets/objects/bridge.png",
+  "src/assets/objects/buildings/Adobe Express - file (4).png",
+  "src/assets/objects/buildings/Adobe Express - file.png",
+  "src/assets/objects/buildings/apartment-2.png",
+  "src/assets/objects/buildings/apartment-spring.png",
+  "src/assets/objects/buildings/bakery.png",
+  "src/assets/objects/buildings/bank.png",
+  "src/assets/objects/buildings/coffee.png",
+  "src/assets/objects/buildings/house-small.png",
+  "src/assets/objects/buildings/house.png",
+  "src/assets/objects/buildings/library.png",
+  "src/assets/objects/buildings/pharmacy-2.png",
+  "src/assets/objects/buildings/pharmacy.png",
+  "src/assets/objects/buildings/post-office.png",
+  "src/assets/objects/buildings/ramen-shop.png",
+  "src/assets/objects/buildings/restaurant.png",
+  "src/assets/objects/buildings/shinto-shrine-green.png",
+  "src/assets/objects/buildings/shinto-shrine.png",
+  "src/assets/objects/buildings/shop.png",
+  "src/assets/objects/buildings/small-restaurant.png",
+  "src/assets/objects/buildings/supermaket.png",
+  "src/assets/objects/buildings/takoyaki.png",
+  "src/assets/objects/buildings/tent.png",
+  "src/assets/objects/buildings/villa.png",
+  "src/assets/objects/objects/Adobe Express - file (3).png",
+  "src/assets/objects/objects/bench.png",
+  "src/assets/objects/objects/bicycle.png",
+  "src/assets/objects/objects/bonsai.png",
+  "src/assets/objects/objects/flowerbed.png",
+  "src/assets/objects/objects/koi-pond.png",
+  "src/assets/objects/objects/koi-small.png",
+  "src/assets/objects/objects/lantern.png",
+  "src/assets/objects/objects/mailbox.png",
+  "src/assets/objects/objects/manekineko.png",
+  "src/assets/objects/objects/sakura-bloom.png",
+  "src/assets/objects/objects/sakura.png",
+  "src/assets/objects/objects/stone-lantern.png",
+  "src/assets/objects/objects/torii.png",
+  "src/assets/objects/objects/tree-autumn.png",
+  "src/assets/objects/objects/tree.png",
+  "src/assets/objects/objects/wind-chime.png",
   "src/assets/tiles/spritesheet.png",
   "src/assets/tiles/tile_000.png",
   "src/assets/tiles/tile_001.png",
@@ -177,15 +168,6 @@ export const assetManifest = [
 ];
 
 export function preloadAssets(scene) {
-  // Validate manifest exists
-  if (!assetManifest || assetManifest.length === 0) {
-    console.error('❌ [preloadAssets] Asset manifest is empty or missing. Run: npm run generate-assets')
-    return
-  }
-
-  console.group('📦 [preloadAssets]')
-  console.log(`Loading ${assetManifest.length} assets from manifest`)
-
   // Keep filenames as-is for cleaner keys that match the asset library
   // E.g.: "red-torii-gate", "dojo-lv1", "sakura-bloom-1", "tile_037"
   const toKey = (assetPath) => {
@@ -193,25 +175,8 @@ export function preloadAssets(scene) {
     return fileName
   }
 
-  let loadedCount = 0
-  const failedAssets = []
-
   assetManifest.forEach(assetPath => {
     const key = toKey(assetPath)
-    try {
-      scene.load.image(key, assetPath)
-      loadedCount++
-    } catch (e) {
-      failedAssets.push({ key, path: assetPath, error: e.message })
-    }
+    scene.load.image(key, assetPath)
   })
-
-  console.log(`✅ Queued ${loadedCount} assets`)
-  if (failedAssets.length > 0) {
-    console.warn(`⚠️  ${failedAssets.length} assets failed to queue:`)
-    failedAssets.forEach(({ key, error }) => {
-      console.warn(`   - ${key}: ${error}`)
-    })
-  }
-  console.groupEnd()
 }

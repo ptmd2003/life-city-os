@@ -83,3 +83,54 @@
 - Scope creep = ask first. Never self-expand tasks.
 - Clean > clever. Readable code outlives smart tricks.
 - Fun > formal. Vibe is part of the deliverable.
+
+---
+
+## 🎮 Future Vision: Advanced World-Building Features
+
+### ⏸️ PARKING LOT (Not Immediate Scope)
+
+**Core Recognition:** life-city-os Stage 1 is focused on **real-life stimulation + task/habit visualization + reward system** — the cat grows, the city reflects your daily routines, you unlock cozy spaces. World-building (player-placed buildings, furniture, layout customization) is a **Stage 2+ feature.**
+
+**Inspiration Sources (Love These):**
+- 📱 **Cozy Core Games** (Animal Crossing, Stardew Valley, A Short Hike)
+  - Charming isometric pixel art with cozy color palettes
+  - Player agency over environment (placement, decoration, growth)
+  - Seasonal changes, day/night cycles, NPCs that react to your presence
+  
+- 🌸 **Spring House (春日閣樓)** — Chinese cozy city builder
+  - Multi-floor isometric house sim
+  - Beautiful pastel color palette (greens, pinks, soft yellows)
+  - Peaceful, no-stress gameplay loop
+  - Furniture arrangement + aesthetic customization
+  - NPCs with daily routines + dialogue
+
+- 🎀 **Meowmories / 喵儿时光** — Mobile cozy life sim
+  - Isometric interior house decoration
+  - Cute character designs, soft colors
+  - Drag-drop object placement
+  - Cat/pet interaction
+  - Reward-based progression (not time-walls)
+
+**What We'll Borrow (Later):**
+✅ Isometric multi-level world structure (can expand vertical layers)
+✅ Drag-drop building/furniture placement UX
+✅ Soft, warm pastel color palettes (greens, pinks, warm neutrals)
+✅ Interior room decoration spaces (player customization)
+✅ NPCs + daily routines that react to world state
+✅ Seasonal visual changes + day/night lighting
+
+**What We Skip (Stays Out of Scope):**
+❌ Heavy world-building pressure (no "build the perfect city" stress)
+❌ Economy simulation (buy/sell, profit optimization)
+❌ Complex zoning/infrastructure (roads, power, water)
+❌ Multiplayer/social pressure
+
+**Stage 2 Possible Direction:**
+Once habit tracking + reward system is solid (Stage 1), unlock **player-customizable cozy spaces**:
+- Cat's room (interior decoration)
+- Small garden plot (plant growth mirrors study/fitness streaks)
+- Tea house interior (decorate as you unlock aesthetic items)
+- NPC visit system (friends visit decorated spaces, react to aesthetic)
+
+**Keep This:** These games prove that cozy isometric worlds can feel alive without heavy mechanics. Your reward unlocks could be **room decor items + furniture** instead of abstract points. Tie building to real-life achievement, not busywork.
