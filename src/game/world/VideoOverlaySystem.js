@@ -38,6 +38,9 @@ export class VideoOverlaySystem {
       return
     }
 
+    // 🔍 DEBUG: Log when video creation is triggered
+    logger.info(`[VideoOverlay] Creating video: ${videoKey} (alpha=${alpha}, speed=${speed}, loopStart=${loopStart}, loopEnd=${loopEnd})`)
+
     // Destroy old video first
     if (this.videoSprite) {
       this.destroy()
@@ -54,6 +57,18 @@ export class VideoOverlaySystem {
       this.videoSprite.setDepth(9999)
       this.videoSprite.setBlendMode(blend)
       this.videoSprite.setAlpha(alpha)
+      
+      // 🔍 DEBUG: Monitor alpha changes (intercept setAlpha calls)
+      const originalSetAlpha = this.videoSprite.setAlpha.bind(this.videoSprite)
+      this.videoSprite.setAlpha = (value) => {
+        if (value !== alpha) {
+          console.warn(`⚠️ Video setAlpha called: ${alpha} → ${value}`)
+          console.trace('setAlpha call stack:')
+        }
+        return originalSetAlpha(value)
+      }
+      
+      
       this.videoSprite.setScrollFactor(1, 1)  // ✅ World-fixed (pans with camera like ground)
       
       // Mark as video overlay to exclude from hover effects
@@ -74,6 +89,9 @@ export class VideoOverlaySystem {
       // Play video
       this.videoSprite.play()
       
+      // 🔍 DEBUG: Log when play() is called
+      logger.info(`[VideoOverlay] video.play() called for ${videoKey}`)
+      
       if (this.videoSprite.video) {
         this.videoSprite.video.currentTime = loopStart
       }
@@ -88,7 +106,7 @@ export class VideoOverlaySystem {
           if (!this.videoSprite?.video) return
           const vid = this.videoSprite.video
           if (vid.currentTime >= loopThreshold) {
-            logger.debug(`Video looping at ${vid.currentTime.toFixed(2)}s`)
+            logger.debug(`Video looping at ${vid.currentTime.toFixed(2)}s (threshold: ${loopThreshold.toFixed(2)}s)`)
             vid.currentTime = loopStart
             vid.play()
           }
@@ -109,6 +127,19 @@ export class VideoOverlaySystem {
 
         video.addEventListener('timeupdate', this.timeUpdateHandler)
         video.addEventListener('ended', this.endedHandler)
+        
+        // 🔍 DEBUG: Log when video actually starts playing
+        video.addEventListener('play', () => {
+          logger.info(`[VideoOverlay] HTML5 video 'play' event fired for ${videoKey}`)
+        })
+        
+        video.addEventListener('playing', () => {
+          logger.info(`[VideoOverlay] HTML5 video 'playing' event fired for ${videoKey}`)
+        })
+        
+        video.addEventListener('pause', () => {
+          logger.warn(`[VideoOverlay] HTML5 video 'pause' event fired for ${videoKey}`)
+        })
       }
 
       this.isPlaying = true

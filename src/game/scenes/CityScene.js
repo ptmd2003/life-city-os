@@ -98,6 +98,10 @@ export default class CityScene extends Phaser.Scene {
     // Initialize season tracking
     this.lastSeason = null
     this.lastLoadedVideoKey = null
+    
+    // 🔍 DEBUG: Log initial season on load
+    const initialSeason = SeasonSystem.getSeason()
+    logger.info(`Initial season detected on load: ${initialSeason}`)
 
     // World state overlay
     this.darknessOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000)
@@ -401,6 +405,18 @@ export default class CityScene extends Phaser.Scene {
   }
 
   update() {
+    // 🔍 DEBUG: Trace video alpha changes (temporary — remove after diagnosis)
+    if (this.videoOverlaySystem?.videoSprite) {
+      const currentAlpha = this.videoOverlaySystem.videoSprite.alpha
+      if (!this._lastVideoAlpha) {
+        this._lastVideoAlpha = currentAlpha
+      }
+      if (currentAlpha !== this._lastVideoAlpha) {
+        console.warn(`⚠️ Video alpha changed: ${this._lastVideoAlpha} → ${currentAlpha}`)
+        console.trace('Alpha change call stack:')
+        this._lastVideoAlpha = currentAlpha
+      }
+    }
 
   updateCamera(this)
 
