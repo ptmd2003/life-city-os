@@ -124,8 +124,8 @@ export class VideoOverlaySystem {
       this.isPlaying = true
       this.currentVideoKey = videoKey
 
-    } catch (err) {
-      logger.error(`VideoOverlay error: ${err.message}`)
+    } catch {
+      // Silently fail on video setup
     }
   }
 
@@ -134,7 +134,7 @@ export class VideoOverlaySystem {
       try {
         this.videoSprite.stop()
         this.isPlaying = false
-      } catch (err) {
+      } catch {
         // Silently fail
       }
     }
@@ -154,7 +154,7 @@ export class VideoOverlaySystem {
     if (this.videoSprite) {
       try {
         this.videoSprite.pause()
-      } catch (err) {
+      } catch {
         // Silently fail
       }
     }
@@ -164,7 +164,7 @@ export class VideoOverlaySystem {
     if (this.videoSprite) {
       try {
         this.videoSprite.resume()
-      } catch (err) {
+      } catch {
         // Silently fail
       }
     }
@@ -230,7 +230,7 @@ export class VideoOverlaySystem {
         this.currentVideoKey = null
         this.timeUpdateHandler = null
         this.endedHandler = null
-      } catch (err) {
+      } catch {
         // Force cleanup even if error
         this.videoSprite = null
         this.timeUpdateHandler = null

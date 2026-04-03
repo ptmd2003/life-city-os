@@ -10,7 +10,7 @@ import { spawnPlayer } from '../systems/PlayerSystem.js'
 import { setupCamera, updateCamera, panCamera } from '../systems/CameraController.js'
 import { setupBuildingPlacement, spawnBuildings } from '../systems/BuildingPlacementSystem.js'
 import { isoToScreen, screenToIso } from '../systems/IsoHelper.js'
-import { createBuilding } from '../systems/BuildingFactory.js'
+import { createBuilding } from '../systems/buildingFactory.js'
 
 import { WorldHealthSystem } from '../world/WorldHealthSystem.js'
 import { WorldState } from '../world/WorldState.js'
@@ -513,8 +513,10 @@ export default class CityScene extends Phaser.Scene {
 
   // Update world state effects
   const health = WorldHealthSystem.getWorldHealth()
-  const darkness = Math.max(0, (9 - health) / 9 * 0.7) // 0 to 0.7 alpha
-  this.darknessOverlay.setAlpha(darkness)
+  // ⚠️ DISABLED: darknessOverlay causing color wash with video overlay
+  // const darkness = Math.max(0, (9 - health) / 9 * 0.7) // 0 to 0.7 alpha
+  // this.darknessOverlay.setAlpha(darkness)
+  this.darknessOverlay.setAlpha(0)  // Always invisible
 
   // Update ground based on world health
   const groundTint = health < 5 ? 0x666666 : 0xffffff
