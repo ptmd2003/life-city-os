@@ -66,7 +66,7 @@ export default class CityScene extends Phaser.Scene {
 
     // 🐱 Initialize Player System
     setupPlayerSystem(this)
-    spawnPlayer(this, 18, 18, Cat)  // Spawn cat at center of 36×36 grid
+    // spawnPlayer(this, 18, 18, Cat)  // TODO: Cat sprite refactor later
 
     this.setupControls()
 
