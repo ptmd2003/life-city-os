@@ -123,9 +123,10 @@ export default class CityScene extends Phaser.Scene {
     this.originX = this.scale.width / 2
     this.originY = 300
 
-    // ✅ Original perfect ratio — flat tiles will layer on top to close gaps
-    this.xStep = this.tileW * 0.44  // 19.36
-    this.yStep = this.tileH * 0.32  // 10.24
+    // ✅ Correct isometric ratio: each tile steps by half its width/height
+    // This prevents gaps and ensures proper tile alignment with screenToIso conversion
+    this.xStep = this.tileW / 2  // 22 — standard isometric X step
+    this.yStep = this.tileH / 2  // 16 — standard isometric Y step
 
     this.isoGroup = this.add.group()
     

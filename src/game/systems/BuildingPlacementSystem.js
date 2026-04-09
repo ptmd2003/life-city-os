@@ -93,13 +93,21 @@ export function spawnBuildings(scene, cityLayout) {
 function handleRightClick(scene, pointer) {
   const store = useCityStore.getState()
   
-  // Find building under pointer
+  // ✅ Convert pointer to tile coords, find building at that tile
+  const pointerTile = screenToIso(
+    pointer.worldX,
+    pointer.worldY,
+    scene.originX,
+    scene.originY,
+    scene.xStep,
+    scene.yStep
+  )
+  
   const clickedBuilding = scene.placedBuildings.find(b => {
     if (!b.sprite) return false
-    const dx = pointer.worldX - b.sprite.x
-    const dy = pointer.worldY - b.sprite.y
-    const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
-    return dx*dx + dy*dy < radius*radius
+    // Check if building is at the clicked tile (with tolerance for floats)
+    return Math.abs(b.tileX - pointerTile.x) < 0.5 && 
+           Math.abs(b.tileY - pointerTile.y) < 0.5
   })
 
   if (!clickedBuilding) return
@@ -137,19 +145,23 @@ function handleRightClick(scene, pointer) {
 }
 
 function handleGlobalPointerDown(scene, pointer) {
-  // ✅ Find ANY building under pointer (locked or unlocked)
+  // ✅ Convert pointer to tile coords, find building at that tile
   const store = useCityStore.getState()
+  
+  const pointerTile = screenToIso(
+    pointer.worldX,
+    pointer.worldY,
+    scene.originX,
+    scene.originY,
+    scene.xStep,
+    scene.yStep
+  )
   
   const clickedBuilding = scene.placedBuildings.find(b => {
     if (!b.sprite) return false
-    const dx = pointer.worldX - b.sprite.x
-    // Correct for origin at center-bottom: visual center is at y - displayHeight/2
-    const dy = pointer.worldY - (b.sprite.y - b.sprite.displayHeight / 2)
-    // Match the 0.25 radius from PointerFeedbackSystem
-    const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
-    
-    // Check if this building is within radius
-    return dx*dx + dy*dy < radius*radius
+    // Check if building is at the clicked tile (with tolerance for floats)
+    return Math.abs(b.tileX - pointerTile.x) < 0.5 && 
+           Math.abs(b.tileY - pointerTile.y) < 0.5
   })
 
   if (clickedBuilding) {

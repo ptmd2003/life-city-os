@@ -1,4 +1,5 @@
 import logger from '../logger.js'
+import { screenToIso } from './IsoHelper.js'
 
 export function updatePointerFeedback(scene) {
 
@@ -7,33 +8,36 @@ export function updatePointerFeedback(scene) {
   let prevHovered = scene.prevHoveredBuilding
   let hoveredBuildingData = null
 
+  // ✅ Convert pointer to tile coords once, use for all detection
+  const pointerTile = screenToIso(
+    pointer.worldX,
+    pointer.worldY,
+    scene.originX,
+    scene.originY,
+    scene.xStep,
+    scene.yStep
+  )
+
   if (scene.placedBuildings) {
     hovered = scene.placedBuildings.find(b => {
-
       if (!b.sprite) return false
-
-      const dx = pointer.worldX - b.sprite.x
-      // Adjust for origin at center-bottom: visual center is at y - height/2
-      const dy = pointer.worldY - (b.sprite.y - b.sprite.displayHeight / 2)
-
-      // circle radius: 0.25 (comfortable selection area)
-      const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
-      return dx*dx + dy*dy < radius*radius
+      // Check if building is at the clicked tile (with tolerance for floats)
+      return Math.abs(b.tileX - pointerTile.x) < 0.5 && 
+             Math.abs(b.tileY - pointerTile.y) < 0.5
     })
   }
 
-  if (scene.cat) {
-
-    const dx = pointer.worldX - scene.cat.x
-    // Adjust for origin at center-bottom: visual center is at y - height/2
-    const dy = pointer.worldY - (scene.cat.y - scene.cat.displayHeight / 2)
-
-    // circular hit area for cat: 0.25 radius
-    const radius = Math.min(scene.cat.displayWidth, scene.cat.displayHeight) * 0.25
-    if (dx*dx + dy*dy < radius*radius) {
+  if (scene.cat && !hovered) {
+    // ✅ Cat hit-detection also uses tile coords
+    const catTile = {
+      x: scene.cat.tileX !== undefined ? scene.cat.tileX : Math.round(pointerTile.x),
+      y: scene.cat.tileY !== undefined ? scene.cat.tileY : Math.round(pointerTile.y)
+    }
+    
+    if (Math.abs(catTile.x - pointerTile.x) < 0.5 && 
+        Math.abs(catTile.y - pointerTile.y) < 0.5) {
       hovered = { sprite: scene.cat }
     }
-
   }
 
   if (hovered) {
