@@ -399,7 +399,6 @@ const validKeys = new Set(
 
 Object.keys(ASSET_REGISTRY).forEach(key => {
   if (!validKeys.has(key)) {
-    console.warn(`⚠️  Removing deleted asset from registry: ${key}`)
     delete ASSET_REGISTRY[key]
   }
 })

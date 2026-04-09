@@ -5,6 +5,7 @@
  * Similar to macOS dock layout
  */
 
+import { useState } from 'react'
 import { useCityStore } from '../stores/useCityStore'
 import { bringToFront, sendToBack } from '../game/systems/DepthManager.js'
 import { ASSET_REGISTRY } from '../game/sprites/assetRegistry.js'
@@ -12,6 +13,8 @@ import { assetManifest } from '../game/preloadAssets.js'
 import '../styles/TransformBar.css'
 
 export function TransformBar() {
+  const [showPreview, setShowPreview] = useState(false)
+  
   const {
     selectedBuilding,
     transformMode,
@@ -281,8 +284,29 @@ export function TransformBar() {
         </button>
       </div>
 
-      {/* Main control buttons */}
-      <div className="transform-bar-controls">
+      {/* Main control buttons with hover preview */}
+      <div 
+        className="transform-bar-controls-wrapper"
+        onMouseEnter={() => setShowPreview(true)}
+        onMouseLeave={() => setShowPreview(false)}
+      >
+        {/* Preview tooltip on hover */}
+        {showPreview && imagePath && (
+          <div className="transform-bar-preview">
+            <div
+              className="transform-bar-preview-icon"
+              style={{
+                backgroundImage: `url('${imagePath}')`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
+            />
+            <div className="transform-bar-preview-label">{getAssetLabel()}</div>
+          </div>
+        )}
+        
+        <div className="transform-bar-controls">
         <button
           className={`transform-bar-btn ${transformMode === 'rotate' ? 'active' : ''} ${selectedBuilding?.locked ? 'disabled' : ''}`}
           onClick={() => handleTransformClick('rotate')}
@@ -339,6 +363,7 @@ export function TransformBar() {
         >
           ⬇️
         </button>
+        </div>
       </div>
 
       {/* Mode toggle (inline with controls) */}

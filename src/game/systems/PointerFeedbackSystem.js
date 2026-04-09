@@ -13,9 +13,10 @@ export function updatePointerFeedback(scene) {
       if (!b.sprite) return false
 
       const dx = pointer.worldX - b.sprite.x
-      const dy = pointer.worldY - b.sprite.y
+      // Adjust for origin at center-bottom: visual center is at y - height/2
+      const dy = pointer.worldY - (b.sprite.y - b.sprite.displayHeight / 2)
 
-      // circle radius based on smaller dimension (center area only)
+      // circle radius: 0.25 (comfortable selection area)
       const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
       return dx*dx + dy*dy < radius*radius
     })
@@ -24,9 +25,10 @@ export function updatePointerFeedback(scene) {
   if (scene.cat) {
 
     const dx = pointer.worldX - scene.cat.x
-    const dy = pointer.worldY - scene.cat.y
+    // Adjust for origin at center-bottom: visual center is at y - height/2
+    const dy = pointer.worldY - (scene.cat.y - scene.cat.displayHeight / 2)
 
-    // circular hit area for cat too
+    // circular hit area for cat: 0.25 radius
     const radius = Math.min(scene.cat.displayWidth, scene.cat.displayHeight) * 0.25
     if (dx*dx + dy*dy < radius*radius) {
       hovered = { sprite: scene.cat }
@@ -36,7 +38,6 @@ export function updatePointerFeedback(scene) {
 
   if (hovered) {
     if (prevHovered !== hovered && hovered.type) {
-      logger.debug(`Hovering ${hovered.type}`)
       scene.prevHoveredBuilding = hovered
     }
 
@@ -50,7 +51,6 @@ export function updatePointerFeedback(scene) {
 
   } else {
     if (prevHovered) {
-      logger.debug(`Unhovered ${prevHovered.type}`)
       scene.prevHoveredBuilding = null
     }
 

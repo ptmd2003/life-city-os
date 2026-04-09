@@ -5,7 +5,7 @@ import logger from '../logger.js'
 import { depthSort } from '../systems/DepthManager.js'
 import { updatePointerFeedback } from '../systems/PointerFeedbackSystem.js'
 import { drawGround, updateGroundTileSprite, drawFlatTiles, updateFlatTileSprite } from '../systems/GroundRender.js'
-import { spawnPlayer } from '../systems/PlayerSystem.js'
+import { setupPlayerSystem, spawnPlayer, movePlayerAlongPath } from '../systems/PlayerSystem.js'
 
 import { setupCamera, updateCamera, panCamera } from '../systems/CameraController.js'
 import { setupBuildingPlacement, spawnBuildings } from '../systems/BuildingPlacementSystem.js'
@@ -64,7 +64,9 @@ export default class CityScene extends Phaser.Scene {
     // ✅ Transform panel event listeners
     this.setupTransformEvents()
 
-    spawnPlayer(this)
+    // 🐱 Initialize Player System
+    setupPlayerSystem(this)
+    spawnPlayer(this, 18, 18, Cat)  // Spawn cat at center of 36×36 grid
 
     this.setupControls()
 
@@ -295,6 +297,7 @@ export default class CityScene extends Phaser.Scene {
         tileY: buildingData.y,
         worldX: pos.x,
         worldY: pos.y,
+        depthOffset: 0,  // ✅ Initialize layer offset for new buildings
         sprite: sprite,
         id: buildingData.id
       }
@@ -309,7 +312,9 @@ export default class CityScene extends Phaser.Scene {
       const hitBuilding = this.placedBuildings.some(b => {
         if (!b.sprite) return false
         const dx = pointer.worldX - b.sprite.x
-        const dy = pointer.worldY - b.sprite.y
+        // Correct for origin at center-bottom: visual center is at y - displayHeight/2
+        const dy = pointer.worldY - (b.sprite.y - b.sprite.displayHeight / 2)
+        // Match the 0.25 radius from PointerFeedbackSystem
         const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
         return dx*dx + dy*dy < radius*radius
       })

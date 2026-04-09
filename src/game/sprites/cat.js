@@ -16,7 +16,15 @@ export default class Cat extends Phaser.GameObjects.Image {
     super(scene, x, y, 'cat-idle')
     scene.add.existing(this)
     this.setInteractive({ useHandCursor: true })
-    this.on('pointerdown', () => {
+    this.on('pointerdown', (pointer) => {
+      // Only respond if pointer is within center radius (0.08 of display size)
+      const dx = pointer.worldX - this.x
+      const dy = pointer.worldY - (this.y - this.displayHeight / 2)
+      const radius = Math.min(this.displayWidth, this.displayHeight) * 0.25
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      
+      if (dist > radius) return // Click outside radius, ignore
+      
       // if sleeping, wake up happy
       if (this.state === CatState.SLEEPING) {
         this.toIdle()
@@ -27,11 +35,11 @@ export default class Cat extends Phaser.GameObjects.Image {
           duration: 150,
           yoyo: true
         })
-      } else if (this.state === CatState.WALKING) {
-        // Stop walking when clicked
+      } else if (this.state === CatState.WALKING && !this.isOnPath) {
+        // Only stop manual walking, not path-based movement
         this.toIdle()
       }
-      // If idle, do nothing (already idle)
+      // If idle or on path, do nothing
     })
 
     this.setOrigin(0.5, 1)
@@ -52,6 +60,7 @@ export default class Cat extends Phaser.GameObjects.Image {
     this.walkTween = null
     this.frameTimer = null
     this.sleepTimer = null
+    this.isOnPath = false  // ✅ Track if currently following ObjectPath
 
     this.toIdle()
   }
@@ -129,6 +138,7 @@ export default class Cat extends Phaser.GameObjects.Image {
   toWalk () {
     this.clearTimers()
     this.state = CatState.WALKING
+    this.isOnPath = false  // Manual walk (not path-based)
 
     const frames = ['cat-walk-1', 'cat-walk-2', 'cat-walk-3', 'cat-walk-4']
     let idx = 0
@@ -162,5 +172,42 @@ export default class Cat extends Phaser.GameObjects.Image {
         }
       }
     })
+  }
+
+  /**
+   * Start path-based walking animation
+   * Called when object path system starts moving the cat
+   */
+  startPathWalk() {
+    this.clearTimers()
+    this.state = CatState.WALKING
+    this.isOnPath = true  // Path-based walk (don't stop on click)
+
+    const frames = ['cat-walk-1', 'cat-walk-2', 'cat-walk-3', 'cat-walk-4']
+    let idx = 0
+
+    this.setTexture(frames[0])
+    this.applyScale()
+
+    // Cycle through walk frames while moving
+    this.frameTimer = this.scene.time.addEvent({
+      delay: 450,
+      loop: true,
+      callback: () => {
+        idx = (idx + 1) % frames.length
+        this.setTexture(frames[idx])
+        this.applyScale()
+      }
+    })
+  }
+
+  /**
+   * Stop path-based walking and return to idle
+   * Called when object path completes
+   */
+  stopPathWalk() {
+    this.clearTimers()
+    this.isOnPath = false
+    this.toIdle()
   }
 }

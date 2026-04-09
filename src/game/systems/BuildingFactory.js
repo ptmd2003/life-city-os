@@ -54,7 +54,7 @@ export function createBuilding(scene, assetKey, x, y) {
 
   if (!building) return null
 
-  // Make building interactive
+  // Make building interactive (selection handled by BuildingPlacementSystem)
   building.setInteractive({ useHandCursor: true })
 
   // ✅ Proper isometric depth with height compensation

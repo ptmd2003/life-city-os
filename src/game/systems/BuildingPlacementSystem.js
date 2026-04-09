@@ -78,6 +78,7 @@ export function spawnBuildings(scene, cityLayout) {
       worldX: pos.x,
       worldY: pos.y,
       locked: obj.locked ?? false,  // ✅ Include lock state from layout
+      depthOffset: obj.depthOffset ?? 0,  // ✅ Include layer offset for persistence
       sprite: building
     }
 
@@ -142,7 +143,9 @@ function handleGlobalPointerDown(scene, pointer) {
   const clickedBuilding = scene.placedBuildings.find(b => {
     if (!b.sprite) return false
     const dx = pointer.worldX - b.sprite.x
-    const dy = pointer.worldY - b.sprite.y
+    // Correct for origin at center-bottom: visual center is at y - displayHeight/2
+    const dy = pointer.worldY - (b.sprite.y - b.sprite.displayHeight / 2)
+    // Match the 0.25 radius from PointerFeedbackSystem
     const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
     
     // Check if this building is within radius
@@ -317,6 +320,7 @@ function updateCityLayoutMemory(scene) {
       y: building.tileY,
       scale: building.sprite.scaleX,
       angle: building.sprite.angle,
+      depthOffset: building.depthOffset ?? 0,  // ✅ Keep layer ordering!
       locked: building.locked ?? originalEntry?.locked ?? false,  // ✅ Keep lock state!
       id: building.type + '-' + roundedX + '-' + roundedY // ID uses rounded for stability
     }
