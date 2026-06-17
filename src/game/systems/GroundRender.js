@@ -73,14 +73,6 @@ export function drawGround(scene) {
       tile._gridX = x
       tile._gridY = y
 
-      // ✅ Optional: Apply tint based on tile type
-      const typeInfo = metadata?.getTypeInfo()
-      if (typeInfo?.colors) {
-        const hexColor = typeInfo.colors.top
-        const colorNum = parseInt(hexColor.replace('#', ''), 16)
-        tile.setTint(colorNum)
-      }
-
       scene.groundTiles.push(tile)
 
     }
@@ -203,7 +195,7 @@ export function updateGroundTileSprite(scene, x, y, tileKey) {
   const pos = isoToScreen(x, y, scene.originX, scene.originY, scene.xStep, scene.yStep)
   tile.setPosition(pos.x, pos.y)
 
-  logger.debug(`Ground tile updated`, { x, y, tileKey, offsetY })
+  logger.debug(`Ground tile updated`, { x, y, tileKey })
 }
 
 /**

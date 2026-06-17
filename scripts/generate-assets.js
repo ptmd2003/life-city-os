@@ -12,9 +12,11 @@ const projectRoot = path.resolve(__dirname, '..')
 // walks the entire `src/assets` tree recursively.
 
 function scanAssets() {
-  // Recursively walk `src/assets` and return flat array of png paths
+  // Recursively walk `public/assets` and return flat array of png paths
+  // (relative to public/ so they resolve correctly in both dev and production)
   const assets = []
-  const baseDir = path.join(projectRoot, 'src', 'assets')
+  const publicDir = path.join(projectRoot, 'public')
+  const baseDir = path.join(publicDir, 'assets')
 
   function walk(dir) {
     const entries = fs.readdirSync(dir, { withFileTypes: true })
@@ -23,8 +25,8 @@ function scanAssets() {
       if (entry.isDirectory()) {
         walk(fullPath)
       } else if (entry.isFile() && entry.name.endsWith('.png')) {
-        // compute path relative to project root, using forward slashes
-        const relPath = path.relative(projectRoot, fullPath).split(path.sep).join('/')
+        // compute path relative to public/ so URL = /assets/... in both dev + prod
+        const relPath = path.relative(publicDir, fullPath).split(path.sep).join('/')
         assets.push(relPath)
       }
     })
