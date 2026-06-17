@@ -4,6 +4,15 @@ import { cityLayout as defaultCityLayout } from '../game/map/cityLayout.js'
 import { createDefaultGroundLayout, setGroundTileAt } from '../game/map/groundLayout.js'
 import { TimeSystem } from '../game/world/TimeSystem.js'
 import logger from '../game/logger.js'
+import {
+  createDefaultWorld,
+  runWorldCommand,
+  CMD,
+  DEFAULT_TILE,
+  worldGroundToFlatLayout,
+  flatLayoutToWorldGround,
+} from '../core/world/worldCommands.js'
+import { useEditorStore } from './useEditorStore.js'
 
 // bump this whenever the default layout file changes so that
 // persisted copies (from localStorage) can be migrated or reset
@@ -55,8 +64,12 @@ export const useCityStore = create(
       layoutVersion: LAYOUT_VERSION,
       layoutVersions: [],             // ✅ Version history: [{ id, timestamp, note, layout }, ...]
 
+      // ✅ World document — source of truth for all permanent map data
+      // Phaser reads this; editor writes to this via applyCommand()
+      world: createDefaultWorld(),
+
       // ✅ Ground editing state
-      groundLayout: createDefaultGroundLayout(), // 36×36 grid of tile keys
+      groundLayout: createDefaultGroundLayout(), // 36×36 grid of tile keys (backward compat — synced from world.layers.ground)
       flatTileLayout: Array(36 * 36).fill(null), // 36×36 grid for flat overlay tiles (empty by default)
       selectedGroundTile: 'tile_037',  // currently selected tile for painting
       groundPaintMode: false,          // are we in ground paint mode?
@@ -401,11 +414,89 @@ export const useCityStore = create(
        * @param {number} y - Grid Y coordinate (0-35)
        * @param {string} tileKey - Tile asset key to paint
        */
-      paintGroundTile: (x, y, tileKey) => {
-        // ✅ Paint a single ground tile at (x, y)
+      /**
+       * Apply a WorldCommand to the world document (source of truth).
+       * Records command in editor undo history.
+       * Syncs groundLayout for backward compat during migration.
+       *
+       * @param {WorldCommand} command - A CMD.* command object
+       */
+      applyCommand: (command) => {
         const state = get()
-        const newGroundLayout = setGroundTileAt(state.groundLayout, x, y, tileKey)
-        set({ groundLayout: newGroundLayout })
+        const prevWorld = state.world
+
+        // Record in editor undo history before mutating
+        useEditorStore.getState().pushHistory(command, prevWorld)
+
+        // Pure command → next world state
+        const nextWorld = runWorldCommand(prevWorld, command)
+
+        const updates = { world: nextWorld }
+
+        // Backward-compat sync: keep flat groundLayout in step
+        if (command.type === CMD.PAINT_GROUND) {
+          updates.groundLayout = setGroundTileAt(state.groundLayout, command.x, command.y, command.tile)
+        } else if (command.type === CMD.ERASE_GROUND) {
+          updates.groundLayout = setGroundTileAt(state.groundLayout, command.x, command.y, DEFAULT_TILE)
+        }
+
+        set(updates)
+        logger.debug(`[applyCommand] ${command.type}`, command)
+      },
+
+      /**
+       * Undo the most recent world command.
+       * Restores the previous WorldDocument snapshot.
+       */
+      undoLastCommand: () => {
+        const editorStore = useEditorStore.getState()
+        const entry = editorStore.popHistory()
+        if (!entry) return
+
+        const state = get()
+        // Push current state to future so redo can replay it
+        editorStore.pushFuture({ command: entry.command, prevWorld: state.world })
+
+        // Restore previous world and re-derive groundLayout
+        set({
+          world: entry.prevWorld,
+          groundLayout: worldGroundToFlatLayout(entry.prevWorld.layers.ground),
+        })
+
+        // Tell Phaser to visually sync the restored ground layer
+        const scene = get().phaserGame?.scene?.getScene('CityScene')
+        scene?.events?.emit('ground-sync', entry.prevWorld.layers.ground)
+        logger.debug('[undoLastCommand] restored previous world')
+      },
+
+      /**
+       * Redo the most recently undone world command.
+       */
+      redoNextCommand: () => {
+        const editorStore = useEditorStore.getState()
+        const entry = editorStore.popFuture()
+        if (!entry) return
+
+        const state = get()
+        const nextWorld = runWorldCommand(state.world, entry.command)
+
+        // Push to history WITHOUT clearing future (this is redo, not new action)
+        editorStore.pushHistoryOnly({ command: entry.command, prevWorld: state.world })
+
+        set({
+          world: nextWorld,
+          groundLayout: worldGroundToFlatLayout(nextWorld.layers.ground),
+        })
+
+        // Tell Phaser to visually sync the re-applied ground layer
+        const scene = get().phaserGame?.scene?.getScene('CityScene')
+        scene?.events?.emit('ground-sync', nextWorld.layers.ground)
+        logger.debug('[redoNextCommand] re-applied command')
+      },
+
+      paintGroundTile: (x, y, tileKey) => {
+        // Delegate to world command system (records history + syncs groundLayout)
+        get().applyCommand({ type: CMD.PAINT_GROUND, x, y, tile: tileKey })
         logger.debug(`Painted (${x}, ${y}) with ${tileKey}`)
       },
 
@@ -449,7 +540,8 @@ export const useCityStore = create(
         cityLayout: state.cityLayout,
         groundLayout: state.groundLayout,
         layoutVersion: state.layoutVersion,
-        layoutVersions: state.layoutVersions
+        layoutVersions: state.layoutVersions,
+        world: state.world,
       }),
       // ✅ Callback runs AFTER persisted data is loaded from localStorage
       onRehydrateStorage: () => (state) => {
@@ -475,7 +567,17 @@ export const useCityStore = create(
           }))
           logger.debug('Ensured all buildings have locked property')
         }
-        
+
+        // 🌍 Migration: Populate world document from old flat layouts if missing
+        if (state && !state.world) {
+          state.world = createDefaultWorld()
+          if (state.groundLayout) {
+            state.world.layers.ground = flatLayoutToWorldGround(state.groundLayout)
+            logger.info(`Migrated ${state.world.layers.ground.length} ground tile overrides to world document`)
+          }
+          logger.info('World document created from legacy data')
+        }
+
         // ✅ NOW mark hydration complete (AFTER data is loaded)
         state._hydrated = true
       }

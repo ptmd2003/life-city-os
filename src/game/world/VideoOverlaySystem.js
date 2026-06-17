@@ -80,66 +80,76 @@ export class VideoOverlaySystem {
       const camera = this.scene.cameras.main
       this.videoSprite.setDisplaySize(camera.width, camera.height)
 
-      // Set playback speed
-      if (this.videoSprite.video) {
-        this.videoSprite.video.playbackRate = speed
-        this.videoSprite.video.loop = false
+      const video = this.videoSprite.video
+      if (!video) return
+
+      // Must be set before play() — noAudio=true already sets muted in Phaser, but be explicit
+      video.muted = true
+      video.defaultMuted = true
+      video.loop = false
+
+      // Loop threshold — resolved lazily (duration is NaN before loadedmetadata)
+      const loopThresholdRef = { value: loopEnd !== null ? loopEnd - 0.2 : null }
+      if (loopEnd === null) {
+        video.addEventListener('loadedmetadata', () => {
+          loopThresholdRef.value = video.duration - 0.2
+        }, { once: true })
       }
 
-      // Play video
-      this.videoSprite.play()
-      
-      // 🔍 DEBUG: Log when play() is called
-      logger.info(`[VideoOverlay] video.play() called for ${videoKey}`)
-      
-      if (this.videoSprite.video) {
-        this.videoSprite.video.currentTime = loopStart
+      this.timeUpdateHandler = () => {
+        if (!this.videoSprite?.video) return
+        const vid = this.videoSprite.video
+        const threshold = loopThresholdRef.value
+        if (threshold !== null && vid.currentTime >= threshold) {
+          logger.debug(`Video looping at ${vid.currentTime.toFixed(2)}s (threshold: ${threshold.toFixed(2)}s)`)
+          vid.currentTime = loopStart
+          vid.play().catch((err) => logger.warn(`Play error on loop: ${err.message}`))
+        }
       }
 
-      // Custom looping handlers
-      if (this.videoSprite.video) {
-        const video = this.videoSprite.video
-        const actualLoopEnd = loopEnd === null ? video.duration : loopEnd
-        const loopThreshold = actualLoopEnd - 0.2
-
-        this.timeUpdateHandler = () => {
-          if (!this.videoSprite?.video) return
-          const vid = this.videoSprite.video
-          if (vid.currentTime >= loopThreshold) {
-            logger.debug(`Video looping at ${vid.currentTime.toFixed(2)}s (threshold: ${loopThreshold.toFixed(2)}s)`)
-            vid.currentTime = loopStart
-            vid.play()
-          }
+      this.endedHandler = () => {
+        logger.debug(`Video ended, resetting`)
+        if (this.videoSprite?.video) {
+          this.videoSprite.video.currentTime = loopStart
+          this.videoSprite.video.play().catch((err) => logger.warn(`Play error on end: ${err.message}`))
         }
+      }
 
-        this.endedHandler = () => {
-          logger.debug(`Video ended, resetting`)
-          if (this.videoSprite?.video) {
-            this.videoSprite.video.currentTime = loopStart
-            const playPromise = this.videoSprite.video.play()
-            if (playPromise) {
-              playPromise.catch((err) => {
-                logger.warn(`Play error on loop: ${err.message}`)
-              })
-            }
-          }
+      video.addEventListener('timeupdate', this.timeUpdateHandler)
+      video.addEventListener('ended', this.endedHandler)
+
+      // 🔍 DEBUG: Log when video actually starts playing
+      video.addEventListener('play', () => {
+        logger.info(`[VideoOverlay] HTML5 video 'play' event fired for ${videoKey}`)
+      })
+      video.addEventListener('playing', () => {
+        logger.info(`[VideoOverlay] HTML5 video 'playing' event fired for ${videoKey}`)
+      })
+      video.addEventListener('pause', () => {
+        logger.warn(`[VideoOverlay] HTML5 video 'pause' event fired for ${videoKey}`)
+      })
+
+      // Single play path: wait until browser has enough data, then call videoSprite.play()
+      // which hooks up Phaser's WebGL texture pipeline. Calling play() before data is ready
+      // triggers NotAllowedError/stall; canplay guarantees data is available first.
+      const doPlay = () => {
+        // Set playbackRate here — must be after video is ready
+        video.playbackRate = speed
+        if (loopStart > 0) {
+          video.currentTime = loopStart
+          video.addEventListener('seeked', () => {
+            this.videoSprite.play(false)
+          }, { once: true })
+        } else {
+          this.videoSprite.play(false)
         }
+      }
 
-        video.addEventListener('timeupdate', this.timeUpdateHandler)
-        video.addEventListener('ended', this.endedHandler)
-        
-        // 🔍 DEBUG: Log when video actually starts playing
-        video.addEventListener('play', () => {
-          logger.info(`[VideoOverlay] HTML5 video 'play' event fired for ${videoKey}`)
-        })
-        
-        video.addEventListener('playing', () => {
-          logger.info(`[VideoOverlay] HTML5 video 'playing' event fired for ${videoKey}`)
-        })
-        
-        video.addEventListener('pause', () => {
-          logger.warn(`[VideoOverlay] HTML5 video 'pause' event fired for ${videoKey}`)
-        })
+      if (video.readyState >= 3) {
+        // Already have enough data — play immediately
+        doPlay()
+      } else {
+        video.addEventListener('canplay', doPlay, { once: true })
       }
 
       this.isPlaying = true

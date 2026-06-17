@@ -2,6 +2,7 @@ import { isoToScreen } from './IsoHelper.js'
 import { useCityStore } from '../../stores/useCityStore.js'
 import logger from '../logger.js'
 import { EnhancedGroundLayout, TileMetadata, TileTypes } from './EnhancedGroundSystem.js'
+import { buildGroundLookup, DEFAULT_TILE } from '../../core/world/worldCommands.js'
 
 /**
  * Initialize enhanced ground metadata from store
@@ -31,7 +32,12 @@ export function drawGround(scene) {
 
   scene.groundTiles = []
   const groundMetadata = initializeGroundMetadata(scene)
-  const groundLayout = useCityStore.getState().groundLayout
+  const store = useCityStore.getState()
+
+  // Build O(1) tile lookup from the world document (sparse layer).
+  // Tiles not listed in the document fall back to DEFAULT_TILE.
+  const worldGround = store.world?.layers?.ground ?? []
+  const tileOverrides = buildGroundLookup(worldGround)
 
   for (let y = 0; y < scene.rows; y++) {
     for (let x = 0; x < scene.cols; x++) {
@@ -50,14 +56,18 @@ export function drawGround(scene) {
       const posY = pos.y
 
       // Get tile metadata
-      const tileIndex = y * scene.cols + x
       const metadata = groundMetadata.getTile(x, y)
-      const tileKey = groundLayout[tileIndex] || 'tile_037'
 
-      // ✅ Create sprite
-      const tile = scene.add.image(posX, posY, tileKey)
+      // Read from world document — sparse with DEFAULT_TILE fallback
+      const tileKey = tileOverrides.get(`${x},${y}`) ?? DEFAULT_TILE
+
+      // ✅ Auto-detect Y offset from tile transparency scanning
+      const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
+
+      // ✅ Create sprite with offset applied
+      const tile = scene.add.image(posX, posY - offsetY, tileKey)
         .setOrigin(0.5, 1)  // ✅ Bottom-center anchor
-        .setDepth(posY + (metadata?.elevation || 0) * 0.1)  // ✅ Elevation affects depth
+        .setDepth(posY + (metadata?.elevation || 0) * 0.1)
 
       // ✅ Store metadata on sprite for reference
       tile._metadata = metadata
@@ -67,7 +77,6 @@ export function drawGround(scene) {
       // ✅ Optional: Apply tint based on tile type
       const typeInfo = metadata?.getTypeInfo()
       if (typeInfo?.colors) {
-        // Use top color as tint (converts hex to number)
         const hexColor = typeInfo.colors.top
         const colorNum = parseInt(hexColor.replace('#', ''), 16)
         tile.setTint(colorNum)
@@ -78,7 +87,7 @@ export function drawGround(scene) {
     }
   }
 
-  console.log(`✅ Ground drawn: ${scene.cols} × ${scene.rows} = ${scene.groundTiles.length} tiles (enhanced metadata system)`)
+  console.log(`✅ Ground drawn: ${scene.cols} × ${scene.rows} = ${scene.groundTiles.length} tiles (world-document driven)`)
 }
 
 /**
@@ -183,17 +192,40 @@ export function updateGroundTileSprite(scene, x, y, tileKey) {
   if (!scene.groundTiles || !scene.groundTiles[tileIndex]) return
 
   const tile = scene.groundTiles[tileIndex]
-  
+
   // Check if it's a new type or old asset key
   if (TileTypes[tileKey]) {
-    // New format: set type via metadata
     setGroundType(scene, x, y, tileKey)
   } else {
-    // Old format: set texture directly
     tile.setTexture(tileKey)
   }
-  
-  logger.debug(`Ground tile updated`, { x, y, tileKey })
+
+  // Always recalculate position from scratch using the new tile's offset.
+  // Reading tile.texture.key AFTER setTexture gives the new key, so a
+  // before/after comparison is always equal — position must be set unconditionally.
+  const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
+  const pos = isoToScreen(x, y, scene.originX, scene.originY, scene.xStep, scene.yStep)
+  tile.setPosition(pos.x, pos.y - offsetY)
+
+  logger.debug(`Ground tile updated`, { x, y, tileKey, offsetY })
+}
+
+/**
+ * Sync all ground tiles in the scene to a new world ground layer.
+ * Called after undo/redo to visually apply the restored WorldDocument.
+ * @param {Phaser.Scene} scene
+ * @param {Array} worldGroundLayer - world.layers.ground (sparse overrides)
+ */
+export function syncAllGroundTiles(scene, worldGroundLayer) {
+  if (!scene.groundTiles) return
+  const lookup = buildGroundLookup(worldGroundLayer)
+  for (let y = 0; y < scene.rows; y++) {
+    for (let x = 0; x < scene.cols; x++) {
+      const tileKey = lookup.get(`${x},${y}`) ?? DEFAULT_TILE
+      updateGroundTileSprite(scene, x, y, tileKey)
+    }
+  }
+  logger.debug(`[syncAllGroundTiles] synced ${scene.rows * scene.cols} tiles`)
 }
 
 /**
@@ -223,8 +255,11 @@ export function drawFlatTiles(scene) {
 
       const posX = pos.x
       const posY = pos.y
+      
+      // ✅ Apply auto-detected offset to align by visible content TOP
+      const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
 
-      const flatTile = scene.add.image(posX, posY, tileKey)
+      const flatTile = scene.add.image(posX, posY - offsetY, tileKey)
         .setOrigin(0.5, 1)  // ✅ Bottom-center anchor
         .setDepth(posY)  // ✅ Same depth as ground tile (uses isometric Y-sort)
 
@@ -248,12 +283,16 @@ export function updateFlatTileSprite(scene, x, y, tileKey) {
 
   if (existingFlatTile) {
     // Update existing flat tile
+    const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
     existingFlatTile.setTexture(tileKey)
+    const pos = isoToScreen(x, y, scene.originX, scene.originY, scene.xStep, scene.yStep)
+    existingFlatTile.setPosition(pos.x, pos.y - offsetY)
     console.log(`✨ [updateFlatTileSprite] Updated FLAT tile overlay (${x}, ${y}) to ${tileKey}`)
   } else {
     // Create new flat tile
     const pos = isoToScreen(x, y, scene.originX, scene.originY, scene.xStep, scene.yStep)
-    const flatTile = scene.add.image(pos.x, pos.y, tileKey)
+    const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
+    const flatTile = scene.add.image(pos.x, pos.y - offsetY, tileKey)
       .setOrigin(0.5, 1)
       .setDepth(pos.y)  // ✅ Use isometric Y-sort (not +0.5)
     

@@ -5,6 +5,21 @@ import { WorldHealthSystem } from '../world/WorldHealthSystem.js'
 import logger from '../logger.js'
 import { useCityStore } from '../../stores/useCityStore.js'
 
+/**
+ * Bounding-box hit test against a placed building's sprite.
+ * Works for all sprite sizes regardless of how many tiles tall the sprite is.
+ * Sprites use setOrigin(0.5, 1): sprite.x = horizontal center, sprite.y = bottom.
+ */
+function spriteHitTest(pointer, building) {
+  if (!building.sprite) return false
+  const s = building.sprite
+  const halfW = s.displayWidth * 0.5
+  const halfH = s.displayHeight * 0.5
+  const cx = s.x
+  const cy = s.y - s.displayHeight * 0.5
+  return Math.abs(pointer.worldX - cx) < halfW && Math.abs(pointer.worldY - cy) < halfH
+}
+
 export function setupBuildingPlacement(scene) {
 
   scene.placedBuildings = []
@@ -92,23 +107,8 @@ export function spawnBuildings(scene, cityLayout) {
  */
 function handleRightClick(scene, pointer) {
   const store = useCityStore.getState()
-  
-  // ✅ Convert pointer to tile coords, find building at that tile
-  const pointerTile = screenToIso(
-    pointer.worldX,
-    pointer.worldY,
-    scene.originX,
-    scene.originY,
-    scene.xStep,
-    scene.yStep
-  )
-  
-  const clickedBuilding = scene.placedBuildings.find(b => {
-    if (!b.sprite) return false
-    // Check if building is at the clicked tile (with tolerance for floats)
-    return Math.abs(b.tileX - pointerTile.x) < 0.5 && 
-           Math.abs(b.tileY - pointerTile.y) < 0.5
-  })
+
+  const clickedBuilding = scene.placedBuildings.find(b => spriteHitTest(pointer, b))
 
   if (!clickedBuilding) return
 
@@ -145,24 +145,9 @@ function handleRightClick(scene, pointer) {
 }
 
 function handleGlobalPointerDown(scene, pointer) {
-  // ✅ Convert pointer to tile coords, find building at that tile
   const store = useCityStore.getState()
-  
-  const pointerTile = screenToIso(
-    pointer.worldX,
-    pointer.worldY,
-    scene.originX,
-    scene.originY,
-    scene.xStep,
-    scene.yStep
-  )
-  
-  const clickedBuilding = scene.placedBuildings.find(b => {
-    if (!b.sprite) return false
-    // Check if building is at the clicked tile (with tolerance for floats)
-    return Math.abs(b.tileX - pointerTile.x) < 0.5 && 
-           Math.abs(b.tileY - pointerTile.y) < 0.5
-  })
+
+  const clickedBuilding = scene.placedBuildings.find(b => spriteHitTest(pointer, b))
 
   if (clickedBuilding) {
     // ✅ Set hoveredBuilding for ALL buildings (locked and unlocked)

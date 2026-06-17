@@ -169,14 +169,16 @@ export default function HabitHeatmap() {
       </div>
 
       {/* Stats */}
-      <div style={{ marginTop: '8px', padding: '6px 8px', background: '#f9f7f3', borderRadius: '6px', fontSize: '9px', color: '#666' }}>
-        <div>
-          📈 {rows[0]?.dates.length} day streak tracked
-          {rows[0]?.completion && (
-            <> • {rows[0].completion.filter((c) => c).length}/{rows[0].completion.length} days consecutive</>
-          )}
-        </div>
-      </div>
+      {(() => {
+        const totalApplicable = rows.reduce((sum, r) => sum + r.completion.filter((c) => c !== -1).length, 0)
+        const totalCompleted = rows.reduce((sum, r) => sum + r.completion.filter((c) => c === 1).length, 0)
+        const rate = totalApplicable > 0 ? Math.round((totalCompleted / totalApplicable) * 100) : 0
+        return (
+          <div style={{ marginTop: '8px', padding: '6px 8px', background: colors.subsurface, borderRadius: '6px', fontSize: '9px', color: colors.text.secondary }}>
+            📈 {rows[0]?.dates.length} days tracked • {totalCompleted}/{totalApplicable} completed ({rate}%)
+          </div>
+        )
+      })()}
     </div>
   )
 }

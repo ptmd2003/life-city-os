@@ -557,8 +557,10 @@ export const useLifeOS = create(
           dates: dates,
         })
 
-        // Get unique habits (deduplicate by title)
-        const uniqueHabits = [...new Map(habits.map((h) => [h.title, h])).values()]
+        // Get unique habits (deduplicate by title, prefer recurring templates over spawned instances)
+        const uniqueHabits = [...new Map(
+          [...habits].sort((a) => (a.recurring ? 1 : -1)).map((h) => [h.title, h])
+        ).values()]
 
         return uniqueHabits.map((habit) => {
           const completion = dates.map((dateStr) => {
@@ -587,35 +589,6 @@ export const useLifeOS = create(
             completion,
             habitId: habit.id,
             isRecurring: habit.recurring,
-          }
-        })
-      },
-
-      /**
-       * Initialize habit heatmap grid (21 days)
-       * Note: Currently used for setup, heatmap data primarily comes from getHabitHeatmapRows
-       * @param {Array<string>} habitNames - List of habit names to initialize
-       */
-      initializeHabitHeatmap: (habitNames) => {
-        set(() => {
-          const heatmap = {}
-          habitNames.forEach((name) => {
-            heatmap[name] = Array(21).fill(0)
-          })
-          return { habitHeatmap: heatmap }
-        })
-      },
-
-      /**
-       * Record habit completion for today
-       */
-      recordHabitCompletion: (habitName) => {
-        set((state) => {
-          return {
-            habitHeatmap: {
-              ...state.habitHeatmap,
-              [habitName]: [1, ...(state.habitHeatmap[habitName]?.slice(0, 20) || [])],
-            },
           }
         })
       },

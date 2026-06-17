@@ -1,5 +1,4 @@
 import logger from '../logger.js'
-import { screenToIso } from './IsoHelper.js'
 
 export function updatePointerFeedback(scene) {
 
@@ -8,34 +7,24 @@ export function updatePointerFeedback(scene) {
   let prevHovered = scene.prevHoveredBuilding
   let hoveredBuildingData = null
 
-  // ✅ Convert pointer to tile coords once, use for all detection
-  const pointerTile = screenToIso(
-    pointer.worldX,
-    pointer.worldY,
-    scene.originX,
-    scene.originY,
-    scene.xStep,
-    scene.yStep
-  )
-
   if (scene.placedBuildings) {
     hovered = scene.placedBuildings.find(b => {
       if (!b.sprite) return false
-      // Check if building is at the clicked tile (with tolerance for floats)
-      return Math.abs(b.tileX - pointerTile.x) < 0.5 && 
-             Math.abs(b.tileY - pointerTile.y) < 0.5
+      const s = b.sprite
+      const halfW = s.displayWidth * 0.5
+      const halfH = s.displayHeight * 0.5
+      const cx = s.x
+      const cy = s.y - s.displayHeight * 0.5
+      return Math.abs(pointer.worldX - cx) < halfW && Math.abs(pointer.worldY - cy) < halfH
     })
   }
 
-  if (scene.cat && !hovered) {
-    // ✅ Cat hit-detection also uses tile coords
-    const catTile = {
-      x: scene.cat.tileX !== undefined ? scene.cat.tileX : Math.round(pointerTile.x),
-      y: scene.cat.tileY !== undefined ? scene.cat.tileY : Math.round(pointerTile.y)
-    }
-    
-    if (Math.abs(catTile.x - pointerTile.x) < 0.5 && 
-        Math.abs(catTile.y - pointerTile.y) < 0.5) {
+  if (scene.cat) {
+    const halfW = scene.cat.displayWidth * 0.5
+    const halfH = scene.cat.displayHeight * 0.5
+    const cx = scene.cat.x
+    const cy = scene.cat.y - scene.cat.displayHeight * 0.5
+    if (Math.abs(pointer.worldX - cx) < halfW && Math.abs(pointer.worldY - cy) < halfH) {
       hovered = { sprite: scene.cat }
     }
   }

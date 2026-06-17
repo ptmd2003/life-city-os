@@ -4,7 +4,7 @@ import logger from '../logger.js'
 
 import { depthSort } from '../systems/DepthManager.js'
 import { updatePointerFeedback } from '../systems/PointerFeedbackSystem.js'
-import { drawGround, updateGroundTileSprite, drawFlatTiles, updateFlatTileSprite } from '../systems/GroundRender.js'
+import { drawGround, updateGroundTileSprite, drawFlatTiles, updateFlatTileSprite, syncAllGroundTiles } from '../systems/GroundRender.js'
 import { setupPlayerSystem, spawnPlayer, movePlayerAlongPath } from '../systems/PlayerSystem.js'
 
 import { setupCamera, updateCamera, panCamera } from '../systems/CameraController.js'
@@ -21,6 +21,7 @@ import { SeasonalDecorSystem } from '../world/SeasonalDecorSystem.js'
 import { VideoOverlaySystem } from '../world/VideoOverlaySystem.js'
 import { useCityStore } from '../../stores/useCityStore.js'
 import { preloadAssets } from '../preloadAssets.js'
+import { detectAllTileOffsets } from '../../utils/detectTileOffset.js'
 
 export default class CityScene extends Phaser.Scene {
 
@@ -44,8 +45,28 @@ export default class CityScene extends Phaser.Scene {
 
     this.setupIsoSystem()
 
+    // 🔍 Auto-detect tile Y offsets by scanning PNG transparency
+    // This prevents gaps and floating tiles when switching between tile types
+    const tileKeys = []
+    for (let i = 0; i <= 150; i++) {
+      const id = String(i).padStart(3, '0')
+      const key = `tile_${id}`
+      if (this.textures.exists(key)) {
+        tileKeys.push(key)
+      }
+    }
+    if (tileKeys.length > 0) {
+      window.TILE_OFFSETS = detectAllTileOffsets(this, tileKeys)
+      logger.info(`[CityScene] Detected offsets for ${tileKeys.length} tiles`)
+    }
+
     drawGround(this)
     drawFlatTiles(this)  // ✅ Render flat tile overlays on top
+
+    // 🔄 Sync ground to world document on undo/redo
+    this.events.on('ground-sync', (worldGroundLayer) => {
+      syncAllGroundTiles(this, worldGroundLayer)
+    })
 
     setupBuildingPlacement(this)
 
@@ -123,10 +144,10 @@ export default class CityScene extends Phaser.Scene {
     this.originX = this.scale.width / 2
     this.originY = 300
 
-    // ✅ Correct isometric ratio: each tile steps by half its width/height
-    // This prevents gaps and ensures proper tile alignment with screenToIso conversion
-    this.xStep = this.tileW / 2  // 22 — standard isometric X step
-    this.yStep = this.tileH / 2  // 16 — standard isometric Y step
+    // ✅ CRITICAL: Use 0.44 and 0.32 multipliers (NOT 22/16 integers!)
+    // This is the proven working ratio from your original build
+    this.xStep = this.tileW * 0.44  // = 19.36 — perfect isometric X step
+    this.yStep = this.tileH * 0.32  // = 10.24 — perfect isometric Y step
 
     this.isoGroup = this.add.group()
     
@@ -310,14 +331,15 @@ export default class CityScene extends Phaser.Scene {
     // ✅ Ground click to deselect
     this.input.on('pointerdown', (pointer) => {
       // Only deselect if clicking empty ground (not on a building)
+      // Uses same bounding-box logic as BuildingPlacementSystem and PointerFeedbackSystem
       const hitBuilding = this.placedBuildings.some(b => {
         if (!b.sprite) return false
-        const dx = pointer.worldX - b.sprite.x
-        // Correct for origin at center-bottom: visual center is at y - displayHeight/2
-        const dy = pointer.worldY - (b.sprite.y - b.sprite.displayHeight / 2)
-        // Match the 0.25 radius from PointerFeedbackSystem
-        const radius = Math.min(b.sprite.displayWidth, b.sprite.displayHeight) * 0.25
-        return dx*dx + dy*dy < radius*radius
+        const s = b.sprite
+        const halfW = s.displayWidth * 0.5
+        const halfH = s.displayHeight * 0.5
+        const cx = s.x
+        const cy = s.y - s.displayHeight * 0.5
+        return Math.abs(pointer.worldX - cx) < halfW && Math.abs(pointer.worldY - cy) < halfH
       })
       
       if (!hitBuilding) {
