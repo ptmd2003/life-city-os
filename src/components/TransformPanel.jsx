@@ -77,6 +77,8 @@ export function TransformPanel() {
   const [noteInput, setNoteInput] = useState('')
   const [selectedZone, setSelectedZone] = useState('dojo')
   const [tileCategory, setTileCategory] = useState('Grass')
+  const [rotateVal, setRotateVal] = useState(0)
+  const [resizeVal, setResizeVal] = useState(1)
   const miniMapRef = useRef(null)
 
   // Draw mini-map whenever groundLayout changes
@@ -199,6 +201,41 @@ export function TransformPanel() {
   }
 
   // Flood fill is handled directly in CityScene pointerdown — no React handler needed
+
+  // ── Transform controls ───────────────────────────────────────────────────────
+  // Sync sliders when selection changes
+  useEffect(() => {
+    if (selectedBuilding?.sprite) {
+      setRotateVal(Math.round(selectedBuilding.sprite.angle) || 0)
+      setResizeVal(parseFloat((selectedBuilding.sprite.scaleX || 1).toFixed(2)))
+    }
+  }, [selectedBuilding])
+
+  const getScene = () => phaserGame?.scene?.getScene('CityScene')
+
+  const handleRotate = (deg) => {
+    setRotateVal(deg)
+    const scene = getScene()
+    if (scene && selectedBuilding?.sprite) {
+      scene.events.emit('transform-building', { building: selectedBuilding.sprite, mode: 'rotate', value: deg })
+    }
+  }
+
+  const handleResize = (scale) => {
+    setResizeVal(scale)
+    const scene = getScene()
+    if (scene && selectedBuilding?.sprite) {
+      scene.events.emit('transform-building', { building: selectedBuilding.sprite, mode: 'resize', value: scale })
+    }
+  }
+
+  const handleDelete = () => {
+    const scene = getScene()
+    if (scene && selectedBuilding?.sprite) {
+      scene.events.emit('delete-building', selectedBuilding.sprite)
+      deselectBuilding()
+    }
+  }
 
   return (
     <div className="transform-panel">
@@ -335,6 +372,7 @@ export function TransformPanel() {
             </div>
           </div>
         </div>
+        </div>
       )}
 
       {/* Storage View */}
@@ -384,6 +422,61 @@ export function TransformPanel() {
                 </div>
               ))}
           </div>
+        </div>
+      )}
+
+      {/* Transform Controls — shown when a building is selected */}
+      {!showStoragePanel && !groundPaintMode && selectedBuilding && (
+        <div className="transform-controls">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--nori-dark)', fontFamily: "'Zen Maru Gothic', sans-serif" }}>
+              {selectedBuilding.type || selectedBuilding.key || 'Building'}
+            </span>
+            <button
+              className={`transform-btn lock-btn ${selectedBuilding.locked ? 'locked' : ''}`}
+              onClick={toggleBuildingLock}
+              title={selectedBuilding.locked ? 'Unlock' : 'Lock position'}
+              style={{ padding: '4px 8px', fontSize: 14 }}
+            >
+              {selectedBuilding.locked ? '🔒' : '🔓'}
+            </button>
+          </div>
+
+          <div className="transform-slider">
+            <label>↻ Rotate</label>
+            <div className="slider-container">
+              <input
+                type="range"
+                className="slider"
+                min={0} max={360} step={1}
+                value={rotateVal}
+                onChange={e => handleRotate(Number(e.target.value))}
+              />
+              <span>{rotateVal}°</span>
+            </div>
+          </div>
+
+          <div className="transform-slider" style={{ marginTop: 8 }}>
+            <label>⤢ Scale</label>
+            <div className="slider-container">
+              <input
+                type="range"
+                className="slider"
+                min={0.25} max={3} step={0.05}
+                value={resizeVal}
+                onChange={e => handleResize(Number(e.target.value))}
+              />
+              <span>{resizeVal.toFixed(2)}×</span>
+            </div>
+          </div>
+
+          <button
+            className="transform-btn delete-btn"
+            onClick={handleDelete}
+            style={{ marginTop: 10, width: '100%' }}
+          >
+            🗑 Delete
+          </button>
         </div>
       )}
 
