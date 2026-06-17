@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { createBuilding } from './buildingFactory.js'
+import { createBuilding } from './BuildingFactory.js'
 import { isoToScreen, screenToIso } from './IsoHelper.js'
 import { WorldHealthSystem } from '../world/WorldHealthSystem.js'
 import logger from '../logger.js'
