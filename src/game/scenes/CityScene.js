@@ -10,7 +10,7 @@ import { setupPlayerSystem, spawnPlayer, movePlayerAlongPath } from '../systems/
 import { setupCamera, updateCamera, panCamera } from '../systems/CameraController.js'
 import { setupBuildingPlacement, spawnBuildings } from '../systems/BuildingPlacementSystem.js'
 import { isoToScreen, screenToIso } from '../systems/IsoHelper.js'
-import { createBuilding } from '../systems/buildingFactory.js'
+import { createBuilding } from '../systems/BuildingFactory.js'
 
 import { WorldHealthSystem } from '../world/WorldHealthSystem.js'
 import { WorldState } from '../world/WorldState.js'
