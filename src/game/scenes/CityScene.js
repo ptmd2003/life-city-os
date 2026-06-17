@@ -402,7 +402,7 @@ export default class CityScene extends Phaser.Scene {
       }
     }, this)
 
-    // Pointer down — paint ground tile or flat tile overlay
+    // Pointer down — paint ground tile, flood fill, or flat tile overlay
     this.input.on('pointerdown', () => {
       const state = useCityStore.getState()
       if (!state.groundPaintMode || !this.hoveredGroundTile) return
@@ -413,15 +413,33 @@ export default class CityScene extends Phaser.Scene {
       const tileKey = state.selectedGroundTile
 
       if (state.groundTileMode === 'flat') {
-        // 🎨 Paint flat tile overlay
         state.paintFlatTile(x, y, tileKey)
         updateFlatTileSprite(this, x, y, tileKey)
-        logger.debug(`Painted flat overlay (${x}, ${y}) with ${tileKey}`)
+      } else if (state.floodFillMode) {
+        // 🪣 Flood fill — BFS replace all connected same-tile neighbours
+        const layout = state.groundLayout
+        const COLS = 36, ROWS = 36
+        const target = layout[y * COLS + x] || 'tile_037'
+        if (target === tileKey) return
+
+        const visited = new Set()
+        const queue = [[x, y]]
+        while (queue.length) {
+          const [cx, cy] = queue.shift()
+          const key = `${cx},${cy}`
+          if (visited.has(key)) continue
+          if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) continue
+          if ((layout[cy * COLS + cx] || 'tile_037') !== target) continue
+          visited.add(key)
+          state.paintGroundTile(cx, cy, tileKey)
+          updateGroundTileSprite(this, cx, cy, tileKey)
+          queue.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1])
+        }
+        logger.info(`Flood filled ${visited.size} tiles at (${x},${y}) with ${tileKey}`)
       } else {
-        // 🎨 Paint full ground tile
+        // ✏️ Normal single-tile paint
         state.paintGroundTile(x, y, tileKey)
         updateGroundTileSprite(this, x, y, tileKey)
-        logger.debug(`Painted tile (${x}, ${y}) with ${tileKey}`)
       }
     }, this)
 

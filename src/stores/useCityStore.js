@@ -73,6 +73,7 @@ export const useCityStore = create(
       flatTileLayout: Array(36 * 36).fill(null), // 36×36 grid for flat overlay tiles (empty by default)
       selectedGroundTile: 'tile_037',  // currently selected tile for painting
       groundPaintMode: false,          // are we in ground paint mode?
+      floodFillMode: false,            // when true, clicks flood-fill entire connected zone
 
 
       // ⏱️ Time state (synced from TimeSystem)
@@ -406,6 +407,11 @@ export const useCityStore = create(
       setGroundPaintMode: (enabled) => {
         set({ groundPaintMode: enabled })
         logger.debug(`Paint mode: ${enabled ? 'ON' : 'OFF'}`)
+      },
+
+      setFloodFillMode: (enabled) => {
+        set({ floodFillMode: enabled })
+        logger.debug(`Flood fill mode: ${enabled ? 'ON' : 'OFF'}`)
       },
 
       /**

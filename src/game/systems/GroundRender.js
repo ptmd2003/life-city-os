@@ -61,12 +61,11 @@ export function drawGround(scene) {
       // Read from world document — sparse with DEFAULT_TILE fallback
       const tileKey = tileOverrides.get(`${x},${y}`) ?? DEFAULT_TILE
 
-      // ✅ Auto-detect Y offset from tile transparency scanning
-      const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
-
-      // ✅ Create sprite with offset applied
-      const tile = scene.add.image(posX, posY - offsetY, tileKey)
-        .setOrigin(0.5, 1)  // ✅ Bottom-center anchor
+      // Ground tiles use NO Y offset — all tiles share origin(0.5,1) bottom anchor
+      // so they naturally align at the same baseline. The old detectTileOffset
+      // approach caused seams because different tile types had different top-padding.
+      const tile = scene.add.image(posX, posY, tileKey)
+        .setOrigin(0.5, 1)  // Bottom-center anchor — bottom vertex of diamond
         .setDepth(posY + (metadata?.elevation || 0) * 0.1)
 
       // ✅ Store metadata on sprite for reference
@@ -200,12 +199,9 @@ export function updateGroundTileSprite(scene, x, y, tileKey) {
     tile.setTexture(tileKey)
   }
 
-  // Always recalculate position from scratch using the new tile's offset.
-  // Reading tile.texture.key AFTER setTexture gives the new key, so a
-  // before/after comparison is always equal — position must be set unconditionally.
-  const offsetY = window.TILE_OFFSETS?.[tileKey] ?? 0
+  // Recalculate position — no Y offset for ground tiles (see drawGround)
   const pos = isoToScreen(x, y, scene.originX, scene.originY, scene.xStep, scene.yStep)
-  tile.setPosition(pos.x, pos.y - offsetY)
+  tile.setPosition(pos.x, pos.y)
 
   logger.debug(`Ground tile updated`, { x, y, tileKey, offsetY })
 }
