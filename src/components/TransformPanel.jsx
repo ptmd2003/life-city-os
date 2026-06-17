@@ -322,7 +322,7 @@ export function TransformPanel() {
                     style={{
                       width: '100%', aspectRatio: '1', borderRadius: 6, cursor: 'pointer',
                       border: isSelected ? '2.5px solid var(--matcha-core)' : '1.5px solid var(--wa-sage)',
-                      background: isSelected ? 'rgba(168,197,160,0.2)' : 'var(--shizen-white)',
+                      backgroundColor: isSelected ? 'rgba(168,197,160,0.2)' : 'transparent',
                       backgroundImage: imagePath ? `url('${imagePath}')` : 'none',
                       backgroundSize: 'cover', backgroundPosition: 'center',
                       boxShadow: isSelected ? '0 0 0 3px rgba(168,197,160,0.35)' : 'none',

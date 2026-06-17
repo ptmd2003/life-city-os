@@ -328,10 +328,12 @@ export default class CityScene extends Phaser.Scene {
       logger.debug(`Created ${buildingData.type} at (${buildingData.x}, ${buildingData.y})`)
     })
 
-    // ✅ Ground click to deselect
+    // ✅ Ground click to deselect (skip in ground paint mode — painter handles clicks)
     this.input.on('pointerdown', (pointer) => {
+      const state = useCityStore.getState()
+      if (state.groundPaintMode) return  // paint mode owns all ground clicks
+
       // Only deselect if clicking empty ground (not on a building)
-      // Uses same bounding-box logic as BuildingPlacementSystem and PointerFeedbackSystem
       const hitBuilding = this.placedBuildings.some(b => {
         if (!b.sprite) return false
         const s = b.sprite
@@ -341,7 +343,7 @@ export default class CityScene extends Phaser.Scene {
         const cy = s.y - s.displayHeight * 0.5
         return Math.abs(pointer.worldX - cx) < halfW && Math.abs(pointer.worldY - cy) < halfH
       })
-      
+
       if (!hitBuilding) {
         const { deselectBuilding } = useCityStore.getState()
         deselectBuilding()
